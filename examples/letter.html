@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orbs example: a letter that comes alive</title>
+<style>
+  body { font-family: Georgia, serif; background: #0e0f0b; color: #dedad2; display: grid; place-items: center; min-height: 100vh; margin: 0; }
+  h1 { font-size: clamp(3rem, 12vw, 8rem); font-weight: 400; font-style: italic; }
+
+  /* The real letter stays in the HTML for SEO and screen readers. */
+  .orb-letter { position: relative; display: inline-block; }
+  .orb-letter canvas {
+    position: absolute; left: 50%; top: 62%;
+    width: .64em; height: .64em;
+    transform: translate(-50%, -50%);
+    color: #FF4400;
+  }
+  /* Hide the glyph only once the orb is running, so a JS failure still shows the letter. */
+  .orb-letter.orb-ready { color: transparent; }
+</style>
+</head>
+<body>
+  <h1>Hell<span class="orb-letter">o<canvas data-orb="sphere" data-points="150" data-hover="morph" data-shapes="sphere,torus,ticks" aria-hidden="true"></canvas></span></h1>
+  <script src="../orb.js" defer></script>
+</body>
+</html>

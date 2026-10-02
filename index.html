@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orbs · dot-formation animations for the web</title>
+<meta name="description" content="Ten morphing dot-formation animations on canvas. One file, about 5 KB gzipped, no dependencies.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital@0;1&family=DM+Sans:wght@400;500&family=DM+Mono&display=swap" rel="stylesheet">
+<style>
+:root { --bg:#0e0f0b; --text:#dedad2; --muted:#8a8a7e; --accent:#FF4400; --line:rgba(255,255,255,.09); --code:rgba(255,255,255,.04); }
+[data-theme="light"] { --bg:#dedede; --text:#191919; --muted:#5f5f5f; --accent:#c43400; --line:rgba(0,0,0,.13); --code:rgba(0,0,0,.04); }
+* { box-sizing:border-box; margin:0; }
+body { background:var(--bg); color:var(--text); font-family:'DM Sans',system-ui,sans-serif; line-height:1.6; transition:background .6s,color .6s; }
+a { color:inherit; }
+.wrap { max-width:1080px; margin:0 auto; padding:0 1.5rem; }
+header.top { display:flex; justify-content:space-between; align-items:center; padding:1.2rem 0; font-size:.9rem; }
+header.top nav { display:flex; gap:1.2rem; align-items:center; }
+button { font:inherit; color:inherit; background:none; border:1px solid var(--line); border-radius:999px; padding:.45rem 1.1rem; cursor:pointer; }
+button:hover, button:focus-visible { border-color:var(--text); outline:none; }
+button[aria-pressed="true"] { border-color:var(--accent); color:var(--accent); }
+
+.hero { display:grid; grid-template-columns:1fr 1fr; gap:2rem; align-items:center; padding:3rem 0 4rem; }
+.hero h1 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(3rem,7vw,5.5rem); line-height:1; }
+.hero h1 em { color:var(--accent); }
+.hero p { color:var(--muted); max-width:34ch; margin:1.2rem 0 1.6rem; font-size:1.05rem; }
+.stage { aspect-ratio:1; width:100%; max-width:460px; justify-self:center; color:var(--accent); }
+.picker { display:flex; flex-wrap:wrap; gap:.5rem; }
+.picker button { padding:.3rem .8rem; font-size:.85rem; }
+
+h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:2rem; margin:0 0 .4rem; }
+section { padding:3rem 0; border-top:1px solid var(--line); }
+.lead { color:var(--muted); margin-bottom:1.6rem; }
+
+.grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); }
+.card { background:var(--bg); padding:1rem 1rem 1.1rem; transition:background .6s; display:flex; flex-direction:column; }
+.card canvas { width:100%; aspect-ratio:1; display:block; }
+.card strong { font-weight:500; }
+.card span { color:var(--muted); font-size:.82rem; flex:1; }
+.card button { margin-top:.7rem; font-family:'DM Mono',monospace; font-size:.72rem; padding:.35rem .6rem; border-radius:6px; text-align:left; background:var(--code); width:100%; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+pre { font-family:'DM Mono',monospace; font-size:.85rem; background:var(--code); border:1px solid var(--line); border-radius:8px; padding:1rem 1.2rem; overflow-x:auto; margin:.6rem 0 1.4rem; }
+.cols { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:2rem; }
+.pills { display:flex; gap:1rem; flex-wrap:wrap; margin-top:.5rem; }
+.pill { display:inline-flex; align-items:center; gap:.6rem; padding:.35rem 1.1rem .35rem .45rem; border:1px solid var(--line); border-radius:999px; }
+.pill canvas { width:38px; height:38px; }
+.letter { font-family:'Playfair Display',serif; font-style:italic; font-size:clamp(3rem,8vw,5rem); line-height:1.1; }
+.letter .orb-o { position:relative; display:inline-block; }
+.letter .orb-o canvas { position:absolute; left:51%; top:62%; width:.72em; height:.72em; transform:translate(-50%,-50%); color:var(--accent); }
+.letter .orb-o.orb-ready { color:transparent; }
+
+footer { padding:2.5rem 0 3rem; border-top:1px solid var(--line); color:var(--muted); font-size:.9rem; }
+.toast { position:fixed; left:50%; bottom:1.5rem; transform:translateX(-50%); background:var(--text); color:var(--bg); padding:.5rem 1rem; border-radius:999px; font-size:.85rem; opacity:0; transition:opacity .3s; pointer-events:none; }
+.toast.show { opacity:1; }
+
+@media (max-width:860px) { .grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .hero, .cols { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <strong>Orbs</strong>
+    <nav>
+      <a href="https://github.com/ShazMoghaddam/orbs">GitHub</a>
+      <button id="theme" type="button">Light theme</button>
+    </nav>
+  </header>
+
+  <div class="hero">
+    <div>
+      <h1>Orbs, <em>in dots.</em></h1>
+      <p>Ten morphing dot formations for loaders, AI states and hero moments. One file, about 5 KB gzipped, no dependencies.</p>
+      <div class="picker" id="picker" role="group" aria-label="Choose a shape"></div>
+    </div>
+    <canvas class="stage" id="stage" data-points="260" data-dot="1.6" aria-hidden="true"></canvas>
+  </div>
+
+  <section>
+    <h2>Shapes</h2>
+    <p class="lead">Each one has its own silhouette, drawing style and motion. Click a snippet to copy it.</p>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section>
+    <h2>Quick start</h2>
+    <div class="cols">
+      <div>
+        <p class="lead">Drop in the script, add a canvas. Size it with CSS and colour it with <code>color</code>.</p>
+<pre>&lt;canvas data-orb="torus"
+        style="width:200px;height:200px;color:#FF4400"
+        aria-hidden="true"&gt;&lt;/canvas&gt;
+
+&lt;script src="https://cdn.jsdelivr.net/gh/ShazMoghaddam/orbs@1.0.0/orb.min.js" defer&gt;&lt;/script&gt;</pre>
+      </div>
+      <div>
+        <p class="lead">Or drive it from JavaScript.</p>
+<pre>const orb = new Orb(canvas, {
+  shape: 'sphere',
+  shapes: 'sphere,wave,ticks',
+  cycle: 4000
+});
+orb.morph('helix');
+orb.next();</pre>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Ideas</h2>
+    <p class="lead">Loading states for AI features, and a letter that comes alive.</p>
+    <div class="pills">
+      <div class="pill"><canvas data-orb="ticks" data-points="60" data-shapes="ticks" aria-hidden="true"></canvas>Thinking...</div>
+      <div class="pill"><canvas data-orb="wave" data-points="90" data-speed="0.8" data-shapes="wave" aria-hidden="true"></canvas>Listening...</div>
+      <div class="pill"><canvas data-orb="spikes" data-points="90" data-speed="0.6" data-shapes="spikes" aria-hidden="true"></canvas>Speaking...</div>
+    </div>
+    <p class="letter" style="margin-top:2rem">Hell<span class="orb-o">o<canvas data-orb="sphere" data-points="140" data-hover="morph" data-shapes="sphere,torus,ticks" aria-hidden="true"></canvas></span> world</p>
+    <p class="lead">Hover the o. The real letter stays in the page, so search engines and screen readers still see it.</p>
+  </section>
+
+  <footer>
+    MIT licensed. Made by <a href="https://shazmoghaddam.github.io/">Shaz Moghaddam</a> in London.
+  </footer>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="orb.js"></script>
+<script>
+(function () {
+  var INFO = {
+    sphere: 'The classic, evenly spread',
+    wave: 'Liquid surface, crests glow',
+    spikes: 'Spines that ripple like audio',
+    constellation: 'Twinkling network graph',
+    torus: 'Donut with a rolling surface',
+    helix: 'Double helix with rungs',
+    galaxy: 'Three swaying spiral arms',
+    ticks: 'Loader ring with a chasing pulse',
+    cube: 'Wireframe built from dots',
+    clusters: 'k-means clusters, breathing'
+  };
+  var names = Object.keys(Orb.shapes);
+
+  // Gallery: each card shows one shape and its snippet.
+  var grid = document.getElementById('grid');
+  names.forEach(function (name) {
+    var card = document.createElement('div');
+    card.className = 'card';
+    var snippet = '<canvas data-orb="' + name + '"></canvas>';
+    card.innerHTML = '<canvas aria-hidden="true"></canvas><strong>' + name + '</strong><span>' + (INFO[name] || '') + '</span>';
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = 'data-orb="' + name + '"';
+    btn.setAttribute('aria-label', 'Copy snippet for ' + name); btn.title = snippet;
+    btn.addEventListener('click', function () { copy(snippet); });
+    card.appendChild(btn);
+    grid.appendChild(card);
+    var cv = card.querySelector('canvas'); cv._orb = new Orb(cv, { shape: name, shapes: name });
+  });
+
+  // Stage: one big orb you can steer.
+  var stage = new Orb(document.getElementById('stage'), { shape: 'sphere', cycle: 5000 });
+  var picker = document.getElementById('picker'), buttons = {};
+  names.forEach(function (name) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.textContent = name;
+    b.addEventListener('click', function () { stage.cycle = 0; stage.morph(name); mark(); });
+    picker.appendChild(b); buttons[name] = b;
+  });
+  function mark() { names.forEach(function (n) { buttons[n].setAttribute('aria-pressed', String(n === stage.shape)); }); }
+  mark();
+  setInterval(mark, 500);   // keeps the highlight in step while it auto-cycles
+
+  // Theme
+  var themeBtn = document.getElementById('theme');
+  themeBtn.addEventListener('click', function () {
+    var light = document.body.dataset.theme !== 'light';
+    document.body.dataset.theme = light ? 'light' : 'dark';
+    themeBtn.textContent = light ? 'Dark theme' : 'Light theme';
+  });
+
+  // Copy
+  var toast = document.getElementById('toast'), timer;
+  function copy(text) {
+    var done = function () { toast.textContent = 'Copied'; toast.classList.add('show'); clearTimeout(timer); timer = setTimeout(function () { toast.classList.remove('show'); }, 1400); };
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, function () { toast.textContent = 'Copy failed. Select the text instead.'; toast.classList.add('show'); });
+    else done();
+  }
+})();
+</script>
+</body>
+</html>

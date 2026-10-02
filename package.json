@@ -1,0 +1,21 @@
+{
+  "name": "@shazmoghaddam/orbs",
+  "version": "1.0.1",
+  "description": "Ten morphing dot-formation animations on canvas. One file, no dependencies.",
+  "main": "orb.js",
+  "browser": "orb.min.js",
+  "unpkg": "orb.min.js",
+  "jsdelivr": "orb.min.js",
+  "files": ["orb.js", "orb.min.js"],
+  "scripts": {
+    "build": "terser orb.js -c -m --comments '/^!/' -o orb.min.js"
+  },
+  "devDependencies": {
+    "terser": "^5.31.0"
+  },
+  "keywords": ["orb", "animation", "canvas", "loader", "spinner", "particles", "generative", "vanilla-js", "zero-dependency"],
+  "author": "Shaz Moghaddam (https://shazmoghaddam.github.io)",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/ShazMoghaddam/orbs.git" },
+  "homepage": "https://shazmoghaddam.github.io/orbs"
+}

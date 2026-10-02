@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orbs example: AI loading state</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #111; color: #eee; display: grid; place-items: center; min-height: 100vh; margin: 0; }
+  .status { display: inline-flex; align-items: center; gap: .6rem; padding: .35rem 1.1rem .35rem .45rem; border: 1px solid #333; border-radius: 999px; }
+  .status canvas { width: 40px; height: 40px; color: #eee; }
+  button { margin-top: 1.5rem; font: inherit; color: inherit; background: none; border: 1px solid #555; border-radius: 999px; padding: .4rem 1rem; cursor: pointer; }
+</style>
+</head>
+<body>
+<div>
+  <div class="status" role="status">
+    <canvas id="orb" aria-hidden="true"></canvas>
+    <span id="label">Listening...</span>
+  </div>
+  <br>
+  <button id="step" type="button">Next state</button>
+</div>
+
+<script src="../orb.js"></script>
+<script>
+  // One orb, three states: morph between them instead of swapping spinners.
+  const orb = new Orb(document.getElementById('orb'), { shape: 'wave', points: 90, speed: 0.8 });
+  const states = [['wave', 'Listening...'], ['ticks', 'Thinking...'], ['spikes', 'Speaking...']];
+  let i = 0;
+  document.getElementById('step').addEventListener('click', () => {
+    i = (i + 1) % states.length;
+    orb.morph(states[i][0]);
+    document.getElementById('label').textContent = states[i][1];
+  });
+</script>
+</body>
+</html>
