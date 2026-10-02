@@ -15,7 +15,7 @@ Add a canvas, size it with CSS, then load the script.
 ```html
 <canvas data-orb="torus" style="width:200px; height:200px; color:#FF4400" aria-hidden="true"></canvas>
 
-<script src="https://cdn.jsdelivr.net/gh/ShazMoghaddam/orbs@1.0.0/orb.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/gh/ShazMoghaddam/orbs@1.0.3/orb.min.js" defer></script>
 ```
 
 Every `<canvas data-orb>` on the page starts automatically. The dots use the canvas's CSS `color`, so you theme an orb the same way you theme text.
@@ -52,6 +52,7 @@ Set options as `data-` attributes, or pass them to the constructor.
 | `data-speed` | `speed` | `0.35` | Rotation speed in radians per second |
 | `data-cycle` | `cycle` | `0` | Milliseconds between automatic morphs. `0` turns it off |
 | `data-hover="morph"` | `hover: 'morph'` | off | Morph to the next shape on hover or tap |
+| `data-click="morph"` | `click: 'morph'` | off | Morph to the next shape only on click or tap. Wrap the canvas in a `<button>` so keyboard users can use it too |
 | `data-theme-morph` | `themeMorph: true` | off | Morph when `<body>`'s `data-theme` or `class` changes |
 
 ## JavaScript API

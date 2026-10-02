@@ -1,5 +1,5 @@
 /*!
- * Orbs v1.0.1 · dot-formation animations on <canvas>. Zero dependencies. MIT.
+ * Orbs v1.0.3 · dot-formation animations on <canvas>. Zero dependencies. MIT.
  * https://github.com/ShazMoghaddam/orbs · Shaz Moghaddam
  *
  * Usage:
@@ -16,6 +16,7 @@
  *   data-cycle        ms between auto-morphs, 0 = off (default 0)
  *   data-shapes       comma list to cycle through     (default all)
  *   data-hover        "morph" to change shape on hover/tap
+ *   data-click        "morph" to change shape only on click/tap (put the canvas in a <button> for keyboard users)
  *   data-theme-morph  morph when <body data-theme> changes
  *
  * Colour comes from the canvas's CSS `color` and fades on theme change.
@@ -134,12 +135,14 @@
     tilt: 1.1,
     spin: 0.6,
     build: function (n) {
-      var rows = Math.max(6, Math.round(Math.sqrt(n / 4))), cols = Math.ceil(n / rows), pts = [];
+      // Full rings only, so the surface has no gaps; spare dots double up on the first ring.
+      var rows = Math.max(6, Math.round(Math.sqrt(n / 4))), cols = Math.max(3, Math.floor(n / rows)), pts = [];
       for (var a = 0; a < cols; a++) for (var b = 0; b < rows; b++) {
         var u = a / cols * TAU, v = b / rows * TAU + a * 0.25;
         pts.push([(0.68 + 0.27 * Math.cos(v)) * Math.cos(u), 0.27 * Math.sin(v), (0.68 + 0.27 * Math.cos(v)) * Math.sin(u)]);
       }
-      return { pts: sample(pts, n) };
+      for (var i = 0; pts.length < n; i++) pts.push(pts[i % rows].slice());
+      return { pts: pts.slice(0, n) };
     },
     deform: function (i, d, t, p, o) {            // rotate each dot around the tube, so the surface flows inside-out
       var u = Math.atan2(p[2], p[0]), cu = Math.cos(u), su = Math.sin(u);
@@ -205,22 +208,27 @@
   });
 
   // Wireframe cube made of dots: the one hard-edged shape, which makes the morphs into it satisfying.
+  // Every edge gets the same number of evenly spaced dots; any spare dots double up on the corners.
   define('cube', {
     tilt: 0.62,
     spin: 0.8,
     build: function (n) {
-      var c = 0.55, V = [], pts = [];
+      var c = 0.55, V = [], E = [], pts = [];
       for (var x = -1; x <= 1; x += 2) for (var y = -1; y <= 1; y += 2) for (var z = -1; z <= 1; z += 2) V.push([x * c, y * c, z * c]);
-      var per = Math.ceil(n / 12);
       for (var a = 0; a < 8; a++) for (var b = a + 1; b < 8; b++) {
         var diff = (V[a][0] !== V[b][0]) + (V[a][1] !== V[b][1]) + (V[a][2] !== V[b][2]);
-        if (diff !== 1) continue;
-        for (var j = 0; j < per; j++) {
-          var f = (j + 0.5) / per;
-          pts.push([V[a][0] + (V[b][0] - V[a][0]) * f, V[a][1] + (V[b][1] - V[a][1]) * f, V[a][2] + (V[b][2] - V[a][2]) * f]);
-        }
+        if (diff === 1) E.push([V[a], V[b]]);
       }
-      return { pts: sample(pts, n) };
+      var k = Math.max(1, Math.floor((n - 8) / 12));      // dots between corners on each edge
+      for (var i = 0; i < 8; i++) pts.push(V[i].slice());
+      E.forEach(function (e) {
+        for (var j = 1; j <= k; j++) {
+          var f = j / (k + 1);
+          pts.push([e[0][0] + (e[1][0] - e[0][0]) * f, e[0][1] + (e[1][1] - e[0][1]) * f, e[0][2] + (e[1][2] - e[0][2]) * f]);
+        }
+      });
+      for (i = 0; pts.length < n; i++) pts.push(V[i % 8].slice());
+      return { pts: pts.slice(0, n) };
     }
   });
 
@@ -314,6 +322,11 @@
       var el = this.canvas.parentElement || this.canvas;
       el.addEventListener('pointerenter', this._hover);
       el.addEventListener('click', this._hover);
+    }
+
+    if ((opts.click || ds.click) === 'morph') {
+      this._click = function () { self.next(); };
+      (this.canvas.parentElement || this.canvas).addEventListener('click', this._click);
     }
 
     var themeMorph = opts.themeMorph || ds.themeMorph !== undefined;
@@ -507,6 +520,7 @@
       var el = this.canvas.parentElement || this.canvas;
       el.removeEventListener('pointerenter', this._hover); el.removeEventListener('click', this._hover);
     }
+    if (this._click) (this.canvas.parentElement || this.canvas).removeEventListener('click', this._click);
   };
 
   /* ── Auto-init every <canvas data-orb> ── */
