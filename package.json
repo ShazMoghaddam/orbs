@@ -17,5 +17,6 @@
   "author": "Shaz Moghaddam (https://shazmoghaddam.github.io)",
   "license": "MIT",
   "repository": { "type": "git", "url": "https://github.com/ShazMoghaddam/orbs.git" },
-  "homepage": "https://shazmoghaddam.github.io/orbs"
+  "homepage": "https://shazmoghaddam.github.io/orbs",
+  "bugs": { "url": "https://github.com/ShazMoghaddam/orbs/issues" }
 }
