@@ -131,6 +131,17 @@ The `top` and `width` values depend on your typeface, so nudge them until the or
 
 Any current browser with canvas, `requestAnimationFrame` and `ResizeObserver`. Older browsers fall back to window resize events.
 
+## Building from source
+
+`orb.min.js` is generated from `orb.js` with terser. After changing `orb.js`, rebuild it:
+
+```bash
+npm install
+npm run build
+```
+
+Then open `index.html` or the files in `examples/` to check the result.
+
 ## License
 
 MIT. Use it in anything, commercial included. A link back is appreciated but not required.
