@@ -12,7 +12,7 @@ One file, about 5 KB gzipped, no dependencies, no build step.
 
 **[Live demo](https://shazmoghaddam.github.io/orbs)**
 
-![Orbs preview](preview.png)
+![Orbs preview](orbs.gif)
 
 ## Quick start
 
