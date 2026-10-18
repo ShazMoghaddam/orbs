@@ -1,5 +1,11 @@
 # Orbs
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Size](https://img.shields.io/badge/gzipped-~5KB-brightgreen)
+![Dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
+[![jsDelivr](https://data.jsdelivr.com/v1/package/gh/ShazMoghaddam/orbs/badge)](https://www.jsdelivr.com/package/gh/ShazMoghaddam/orbs)
+[![GitHub stars](https://img.shields.io/github/stars/ShazMoghaddam/orbs?style=social)](https://github.com/ShazMoghaddam/orbs)
+
 Ten morphing dot-formation animations for the web. Use them for loaders, AI "thinking" states, or one memorable moment in a hero.
 
 One file, about 5 KB gzipped, no dependencies, no build step.
@@ -141,6 +147,8 @@ npm run build
 ```
 
 Then open `index.html` or the files in `examples/` to check the result.
+
+If Orbs is useful to you, a star on the repo helps other developers find it.
 
 ## License
 
