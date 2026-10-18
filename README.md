@@ -10,7 +10,7 @@ Ten morphing dot-formation animations for the web. Use them for loaders, AI "thi
 
 One file, about 5 KB gzipped, no dependencies, no build step.
 
-**[Live demo](https://shazmoghaddam.github.io/orbs)**
+**[Live demo](https://shazmoghaddam.github.io/orbs)** · See it in a real page in the Contact section of [shazmoghaddam.github.io](https://shazmoghaddam.github.io)
 
 ![Orbs preview](orbs.gif)
 
