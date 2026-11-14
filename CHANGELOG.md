@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.2.0 (2026-11-14)
+
+- New lines style: `data-style="lines"` draws any shape as glowing vertical slices instead of dots. Solid shapes become sliced silhouettes, `bars` becomes a waveform, and rings, holes and marks keep their gaps.
+- New `data-glow`: a soft glow behind the shape, blurred at quarter size to keep it cheap.
+- New `data-reflect`: a faded mirror image that sits just under the shape.
+- New `data-line`: line thickness for slices and connecting lines.
+- New shape option `lineGap`, for tuning how the lines style joins dots.
+- With the lines style, orbs use 320 points by default for fuller silhouettes.
+- New example: `examples/lines.html`.
+- About 8 KB gzipped (up from 6.5 KB). Glow and reflection are off unless you ask for them.
+
 ## 1.1.0 (2026-11-14)
 
 - Six new shapes: `ripple` (listening), `bars` (speaking), `atom`, `infinity` (a loader with a pulse running round a figure of eight), and the status badges `check` and `cross`.

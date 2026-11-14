@@ -3,14 +3,14 @@
 # Orbs
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-![Size](https://img.shields.io/badge/gzipped-~6.5KB-brightgreen)
+![Size](https://img.shields.io/badge/gzipped-~8KB-brightgreen)
 ![Dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
 [![jsDelivr](https://data.jsdelivr.com/v1/package/gh/ShazMoghaddam/orbs/badge)](https://www.jsdelivr.com/package/gh/ShazMoghaddam/orbs)
 [![GitHub stars](https://img.shields.io/github/stars/ShazMoghaddam/orbs?style=social)](https://github.com/ShazMoghaddam/orbs)
 
 Sixteen morphing dot-formation animations for the web. Use them for loaders, AI "listening", "thinking" and "speaking" states, success and error badges, or one memorable moment in a hero.
 
-One file, about 6.5 KB gzipped, no dependencies, no build step.
+One file, about 8 KB gzipped, no dependencies, no build step.
 
 **[Live demo](https://shazmoghaddam.github.io/orbs)** · See it in a real page in the Contact section of [shazmoghaddam.github.io](https://shazmoghaddam.github.io)
 
@@ -23,7 +23,7 @@ Add a canvas, size it with CSS, then load the script.
 ```html
 <canvas data-orb="torus" style="width:200px; height:200px; color:#FF4400" aria-hidden="true"></canvas>
 
-<script src="https://cdn.jsdelivr.net/gh/ShazMoghaddam/orbs@1.1.0/orb.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/gh/ShazMoghaddam/orbs@1.2.0/orb.min.js" defer></script>
 ```
 
 Every `<canvas data-orb>` on the page starts automatically. The dots use the canvas's CSS `color`, so you theme an orb the same way you theme text.
@@ -63,13 +63,28 @@ Set options as `data-` attributes, or pass them to the constructor.
 | --- | --- | --- | --- |
 | `data-orb` | `shape` | `sphere` | Starting shape |
 | `data-shapes` | `shapes` | all except `check` and `cross` | Comma list of shapes to cycle through |
-| `data-points` | `points` | `180` | Number of dots. Use 60 to 100 for small loaders |
+| `data-points` | `points` | `180`, or `320` with lines | Number of dots. Use 60 to 100 for small loaders |
 | `data-dot` | `dot` | `1.2` | Dot radius in CSS pixels |
 | `data-speed` | `speed` | `0.35` | Rotation speed in radians per second |
 | `data-cycle` | `cycle` | `0` | Milliseconds between automatic morphs. `0` turns it off |
 | `data-hover="morph"` | `hover: 'morph'` | off | Morph to the next shape on hover or tap |
 | `data-click="morph"` | `click: 'morph'` | off | Morph to the next shape only on click or tap. Wrap the canvas in a `<button>` so keyboard users can use it too |
 | `data-theme-morph` | `themeMorph: true` | off | Morph when `<body>`'s `data-theme` or `class` changes |
+| `data-style` | `style` | `dots` | `lines` draws the shape as glowing vertical slices. See [Lines style](#lines-style) |
+| `data-line` | `line` | auto | Line thickness in CSS pixels, for slices and connecting lines |
+| `data-glow` | `glow` | off | A soft glow behind the shape. On its own it uses 8 px; a number sets the size |
+| `data-reflect` | `reflect` | off | A faded mirror image underneath. On its own it uses 0.35; a number from 0 to 1 sets its strength |
+
+## Lines style
+
+Any shape can be drawn as glowing vertical slices instead of dots, inspired by the scan-line look in music videos. Solid shapes like `sphere`, `wave` and `torus` become sliced silhouettes, `bars` becomes a waveform, and `check`, `cross` and `infinity` keep their clean outlines.
+
+```html
+<canvas data-orb="bars" data-style="lines" data-glow data-reflect
+        style="width:320px;height:320px;color:#6FD8F2" aria-hidden="true"></canvas>
+```
+
+`data-glow` and `data-reflect` work with dots too. Lines look best from about 120 px up, and on dark backgrounds with a bright colour. `constellation` and `clusters` are sparse, so they suit dots better. See [`examples/lines.html`](examples/lines.html).
 
 ## JavaScript API
 
@@ -113,6 +128,7 @@ Orb.define('ring2', {
   spin: 0.5,                       // rotation multiplier
   face: false,                     // true turns the orb to face the viewer instead of spinning
   inCycle: true,                   // false leaves the shape out of the default cycle
+  lineGap: 0.45,                   // lines style: the widest gap (in radii) still joined into one line
   size: 1,                         // dot size multiplier, number or function(i, data, t, p)
   alpha: 1,                        // opacity multiplier, number or function(i, data, t, p)
   dash: (i, data, t, p) => 0,      // above 0, draws a radial stroke of that length instead of a dot
@@ -145,6 +161,7 @@ The `top` and `width` values depend on your typeface, so nudge them until the or
 - When the visitor has reduced motion turned on, each orb shows a still frame, and morphs happen instantly.
 - Orbs only animate while they are on screen and the tab is visible.
 - Canvases render at device pixel ratio (capped at 2) and resize with their container.
+- The lines style costs a little more than dots. Glow and reflection each copy the finished frame, so they are off unless you ask for them. Glow is blurred at quarter size to keep it cheap, and browsers without canvas filters simply skip it.
 - Orbs are decorative. Add `aria-hidden="true"` to the canvas and put any status text next to it, as the loader example does.
 
 ## Browser support
