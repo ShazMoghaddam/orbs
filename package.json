@@ -1,6 +1,6 @@
 {
   "name": "@shazmoghaddam/orbs",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Sixteen morphing dot-formation animations on canvas. One file, no dependencies.",
   "main": "orb.js",
   "browser": "orb.min.js",
