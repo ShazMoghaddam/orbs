@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.0 (2026-11-14)
+
+- Four new shapes, twenty in all: `vortex` (three arms spiralling into a funnel, for thinking), `blob` (a sphere that wobbles like liquid), `iris` (an eye with a breathing pupil, a glance and a blink, for listening) and `orbit` (four large, soft dots circling, for calm moments).
+- New desk display: `display.html` shows one orb full screen on a spare iPad or monitor, keeps the screen awake, hides the cursor and drifts against burn-in. It takes the Studio's share settings, plus `sound=mic` to react to the room.
+- Studio: "Preview in desk mode" opens your orb full screen, and Get the code has a Desk display card with a copyable link.
+- New shape option `bigDots`, which sizes dots as a share of the orb's radius so large dots scale with it.
+- About 10.5 KB gzipped (up from 9.5 KB).
+
 ## 1.4.0 (2026-11-14)
 
 - New Studio on the demo site: pick a shape, style, colour, points, dot size, line thickness, glow, reflection, size, speed, tilt and cycling, try it with sound, then copy the HTML or JavaScript. Includes eight presets, a share link and Surprise me.

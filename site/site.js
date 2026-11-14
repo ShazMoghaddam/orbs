@@ -4,7 +4,7 @@
 (function () {
   'use strict';
 
-  var CDN = 'https://cdn.jsdelivr.net/gh/ShazMoghaddam/orbs@1.4.0/orb.min.js';
+  var CDN = 'https://cdn.jsdelivr.net/gh/ShazMoghaddam/orbs@1.5.0/orb.min.js';
   var DEFAULTS = {
     shape: 'torus', style: 'dots', color: '#FF7A45', points: null, dot: 1.2, line: 0,
     glow: 0, reflect: 0, size: 320, speed: 0.35, tilt: 0, cycle: 0, shapes: null, audioAmount: 1
@@ -250,6 +250,11 @@
     $('[data-snippet]').innerHTML = sn[1];
     $('[data-code="js"]').innerHTML = js[1];
     render.snippet = sn[0]; render.js = js[0];
+    if (typeof deskUrl === 'function') {
+      render.desk = deskUrl();
+      $('[data-code="desk-url"]').textContent = render.desk;
+      $('[data-desk-open]').href = render.desk;
+    }
   }
 
   /* ── Keep every control in step with the state ── */
@@ -310,18 +315,33 @@
   $$('[data-copy]').forEach(function (b) {
     b.addEventListener('click', function () {
       var where = b.closest('.install') ? $('[data-copy-note]') : $('[data-note]');
-      copy(b.dataset.copy === 'js' ? render.js : render.snippet, b, where);
+      copy(b.dataset.copy === 'js' ? render.js : b.dataset.copy === 'desk-url' ? render.desk : render.snippet, b, where);
     });
   });
 
   // Shared links carry only the settings that differ from the defaults.
   var KEYS = ['shape', 'style', 'color', 'points', 'dot', 'line', 'glow', 'reflect', 'size', 'speed', 'tilt', 'cycle', 'shapes', 'audioAmount'];
-  $('[data-share]').addEventListener('click', function (e) {
+  function settingsQuery(skip) {
     var q = new URLSearchParams();
-    KEYS.forEach(function (k) { if (state[k] !== DEFAULTS[k] && state[k] != null) q.set(k, k === 'color' ? state[k].replace('#', '') : state[k]); });
+    KEYS.forEach(function (k) {
+      if (skip && skip.indexOf(k) >= 0) return;
+      if (state[k] !== DEFAULTS[k] && state[k] != null) q.set(k, k === 'color' ? state[k].replace('#', '') : state[k]);
+    });
+    return q;
+  }
+  $('[data-share]').addEventListener('click', function (e) {
+    var q = settingsQuery();
     var url = location.origin + location.pathname + (q.toString() ? '?' + q : '') + '#studio';
     copy(url, e.currentTarget);
   });
+  // The display link always names the shape, so it still opens the same orb if the defaults ever change.
+  function deskUrl() {
+    var q = settingsQuery(['size', 'shape']);
+    var all = new URLSearchParams('shape=' + state.shape + (q.toString() ? '&' + q : ''));
+    if ($('[data-desk-mic]').checked) all.set('sound', 'mic');
+    return location.origin + location.pathname.replace(/[^/]*$/, '') + 'display.html?' + all;
+  }
+  $('[data-desk-mic]').addEventListener('change', render);
   function fromQuery() {
     var q = new URLSearchParams(location.search), s = {}, any = false;
     KEYS.forEach(function (k) {
@@ -346,6 +366,46 @@
       speed: pick([0.2, 0.35, 0.6]), tilt: pick([0, 0, -20, 20]), size: state.size
     });
   });
+
+  /* ── Desk mode: the Studio orb, full screen ── */
+  var desk = { orb: null, lock: null, idle: 0, shift: 0 };
+  function deskOpen() {
+    var overlay = $('[data-desk-overlay]'), c = $('[data-desk-orb]');
+    overlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+    c.style.color = state.color;
+    desk.orb = new Orb(c, orbOptions(state));
+    if (orb.audio) desk.orb.listen(orb.audio.stream || orb.audio.node);     // keep reacting to whatever is playing
+    $('[data-desk-exit]').focus();
+    if (overlay.requestFullscreen) overlay.requestFullscreen().catch(function () {});
+    if (navigator.wakeLock) navigator.wakeLock.request('screen').then(function (l) { desk.lock = l; }, function () {});
+    var wake = function () {
+      overlay.removeAttribute('data-idle');
+      clearTimeout(desk.idle);
+      desk.idle = setTimeout(function () { overlay.setAttribute('data-idle', ''); }, 2500);
+    };
+    overlay.onpointermove = wake; overlay.onpointerdown = wake; wake();
+    desk.shift = setInterval(function () {                                    // drift a few pixels each minute against burn-in
+      $('[data-desk-stage]').style.transform = 'translate(' + Math.round((Math.random() - 0.5) * 12) + 'px, ' + Math.round((Math.random() - 0.5) * 12) + 'px)';
+    }, 60000);
+  }
+  function deskClose() {
+    var overlay = $('[data-desk-overlay]');
+    if (overlay.hidden) return;
+    overlay.hidden = true;
+    document.body.style.overflow = '';
+    if (desk.orb) { desk.orb.destroy(); desk.orb = null; }
+    clearInterval(desk.shift); clearTimeout(desk.idle);
+    if (desk.lock) { desk.lock.release().catch(function () {}); desk.lock = null; }
+    // Leaving full screen resets focus, so hand it back to the button once that has finished.
+    var refocus = function () { $('[data-desk]').focus({ preventScroll: true }); };
+    if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().then(refocus, refocus);
+    else setTimeout(refocus, 50);
+  }
+  $('[data-desk]').addEventListener('click', deskOpen);
+  $('[data-desk-exit]').addEventListener('click', deskClose);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') deskClose(); });
+  document.addEventListener('fullscreenchange', function () { if (!document.fullscreenElement) deskClose(); });
 
   /* ── Footer: draw the content a second time for the orange half ── */
   var layer = $('.foot__layer');
