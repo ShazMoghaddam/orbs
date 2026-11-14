@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Orbs · dot animations that morph</title>
-<meta name="description" content="Sixteen morphing dot animations for the web, with a lines style, glow and sound. Design one in the Studio, then copy one line of HTML. One file, no dependencies.">
+<meta name="description" content="Twenty morphing dot animations for the web, with a lines style, glow and sound. Design one in the Studio, then copy one line of HTML. One file, no dependencies.">
 <link rel="canonical" href="https://shazmoghaddam.github.io/orbs/">
 <!-- Shown when the link is shared on LinkedIn, Slack, WhatsApp, X and the like -->
 <meta property="og:type" content="website">
@@ -43,7 +43,7 @@
   <section class="hero" aria-labelledby="hero-h">
     <div class="hero__copy">
       <h1 id="hero-h">Dot animations that <em>morph</em>.</h1>
-      <p class="hero__lede">Sixteen shapes for loaders, AI states, status badges and hero moments. Draw them as dots or glowing lines, let them move with sound, then copy one line of HTML.</p>
+      <p class="hero__lede">Twenty shapes for loaders, AI states, status badges, desk displays and hero moments. Draw them as dots or glowing lines, let them move with sound, then copy one line of HTML.</p>
     </div>
 
     <!-- Each example is a real orb. Selecting one loads its settings into the Studio. -->
@@ -89,7 +89,10 @@
         <h2 id="studio-h">Studio</h2>
         <p class="studio__sub">Make it yours, then copy the code.</p>
       </div>
-      <button type="button" class="btn btn--quiet" data-surprise>Surprise me</button>
+      <div class="studio__actions">
+        <button type="button" class="btn btn--quiet" data-surprise>Surprise me</button>
+        <button type="button" class="btn btn--quiet" data-desk>Preview in desk mode</button>
+      </div>
     </div>
 
     <div class="studio__body">
@@ -206,7 +209,7 @@
   <section class="section install" id="install" aria-labelledby="install-h">
     <div class="section__head">
       <h2 id="install-h">Get the code</h2>
-      <p>One file, about 9.5 KB gzipped, no dependencies. It follows every change you make in the Studio.</p>
+      <p>One file, about 10.5 KB gzipped, no dependencies. Every card follows the changes you make in the Studio.</p>
     </div>
     <div class="ways">
       <div class="way">
@@ -219,10 +222,22 @@
         <pre class="code" tabindex="0" aria-label="JavaScript code"><code data-code="js"></code></pre>
         <div class="way__actions"><button type="button" class="btn btn--solid" data-copy="js">Copy code</button><a class="btn" href="https://github.com/ShazMoghaddam/orbs#javascript-api">Full API</a></div>
       </div>
+      <div class="way way--wide">
+        <div class="way__head"><span class="way__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span><div><h3 class="way__t">Desk display</h3><p class="way__s">Turn a spare iPad, tablet or monitor into an ambient orb. Open the link, tap for full screen, and it keeps the screen awake and drifts a few pixels each minute to protect it. On an iPad, add it to the home screen to hide the browser bars.</p></div></div>
+        <pre class="code code--url" tabindex="0" aria-label="Display link"><code data-code="desk-url"></code></pre>
+        <label class="toggle toggle--inline">React to the room's microphone <input type="checkbox" data-desk-mic></label>
+        <div class="way__actions"><button type="button" class="btn btn--solid" data-copy="desk-url">Copy display link</button><a class="btn" href="display.html" target="_blank" rel="noopener" data-desk-open>Open display</a></div>
+      </div>
     </div>
     <p class="install__note" data-copy-note role="status" aria-live="polite"></p>
   </section>
 </main>
+
+<!-- Desk mode: the current Studio orb, full screen. Esc, the button or leaving full screen closes it. -->
+<div class="desk" data-desk-overlay role="dialog" aria-modal="true" aria-label="Desk mode preview" hidden>
+  <div class="desk__stage" data-desk-stage><canvas class="desk__orb" data-desk-orb aria-hidden="true"></canvas></div>
+  <button type="button" class="desk__exit" data-desk-exit>Exit desk mode</button>
+</div>
 
 <footer class="foot">
   <!-- One layer of content. site.js copies it once more for the orange half; each copy is clipped to its own triangle. -->
@@ -230,14 +245,14 @@
     <div class="foot__in">
       <div class="foot__about">
         <a class="mark" href="#top" aria-label="Orbs, back to the top"><canvas class="mark__orb" data-foot-orb aria-hidden="true"></canvas>Orbs</a>
-        <p class="foot__eyebrow">Open-source canvas animations · v1.4</p>
-        <p class="foot__lede">Sixteen dot formations that morph into one another, from loaders and AI states to success and error badges. Draw them as dots or glowing lines, let them move with sound, then drop one line of HTML into any site.</p>
+        <p class="foot__eyebrow">Open-source canvas animations · v1.5</p>
+        <p class="foot__lede">Twenty dot formations that morph into one another, from loaders and AI states to success and error badges. Draw them as dots or glowing lines, let them move with sound, then drop one line of HTML into any site.</p>
       </div>
 
       <dl class="foot__specs">
         <div><dt>Dependencies</dt><dd>0</dd></div>
-        <div><dt>Gzipped</dt><dd>9.5 kB</dd></div>
-        <div><dt>Shapes</dt><dd>16</dd></div>
+        <div><dt>Gzipped</dt><dd>10.5 kB</dd></div>
+        <div><dt>Shapes</dt><dd>20</dd></div>
       </dl>
 
       <nav class="foot__links" aria-label="Footer">

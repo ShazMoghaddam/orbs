@@ -1,5 +1,5 @@
 /*!
- * Orbs v1.4.0 · dot-formation animations on <canvas>. Zero dependencies. MIT.
+ * Orbs v1.5.0 · dot-formation animations on <canvas>. Zero dependencies. MIT.
  * https://github.com/ShazMoghaddam/orbs · Shaz Moghaddam
  *
  * Usage:
@@ -7,7 +7,7 @@
  *   <script src="orb.js" defer></script>   (or inline it)
  *
  * Shapes: sphere, wave, spikes, constellation, torus, helix, galaxy, ticks, cube, clusters,
- *         ripple, bars, atom, infinity, check, cross
+ *         ripple, bars, atom, infinity, vortex, blob, iris, orbit, check, cross
  *
  * Attributes (all optional):
  *   data-orb          first shape                     (default sphere)
@@ -85,6 +85,7 @@
    *   face              turn to face the viewer instead of spinning (for flat marks)
    *   inCycle           false keeps the shape out of the default cycle
    *   audio(i,d,A,p,o)  react to sound: write a moved copy of p into o. A has bands[16] and level, 0..1
+   *   bigDots           size is a percentage of the orb's radius rather than pixels, for large soft dots
    *   lineGap           in the lines style, the widest gap (in radii) still joined into one line (default 0.45)
    */
   var SHAPES = {};
@@ -390,6 +391,106 @@
     deform: sway,
     size: function (i, d, t) { return 0.8 + 0.9 * Math.pow(0.5 + 0.5 * Math.cos((d.u[i] - t * 0.35) * TAU), 6); },
     alpha: function (i, d, t) { return 0.5 + 1.2 * Math.pow(0.5 + 0.5 * Math.cos((d.u[i] - t * 0.35) * TAU), 6); }
+  });
+
+  // Thinking: dots spiral inwards and down a funnel, turning faster near the centre.
+  define('vortex', {
+    tilt: 0.75,
+    spin: 0.15,
+    build: function (n) {
+      var pts = [], f = [], a = [];
+      for (var i = 0; i < n; i++) {
+        var fr = (i * 0.618034) % 1, arm = i % 3;
+        f.push(fr); a.push(arm * TAU / 3 + fr * TAU * 1.6);
+        var r = 0.95 * (1 - fr) + 0.05;
+        pts.push([Math.cos(a[i]) * r, fr * fr * 0.7 - 0.25, Math.sin(a[i]) * r]);
+      }
+      return { pts: pts, f: f, a: a };
+    },
+    deform: function (i, d, t, p, o) {
+      var fr = (d.f[i] + t * 0.11) % 1, r = 0.95 * (1 - fr) + 0.05;
+      var ang = d.a[i] + (fr - d.f[i]) * TAU * 1.6 + t * 0.9;   // three arms turn together; dots slide inwards along them
+      o[0] = Math.cos(ang) * r; o[1] = fr * fr * 0.7 - 0.25; o[2] = Math.sin(ang) * r;
+    },
+    alpha: function (i, d, t) { return 1.15 * Math.sin(((d.f[i] + t * 0.11) % 1) * Math.PI); },
+    size: function (i, d, t) { return 1.25 - 0.55 * ((d.f[i] + t * 0.11) % 1); }
+  });
+
+  // Active: a sphere whose surface wobbles slowly, like a drop of liquid.
+  define('blob', {
+    spin: 0.6,
+    build: function (n) { return { pts: fib(n) }; },
+    deform: function (i, d, t, p, o) {
+      var x = p[0], y = p[1], z = p[2], l = Math.sqrt(x * x + y * y + z * z) || 1;
+      x /= l; y /= l; z /= l;
+      var w = Math.sin(x * 2.1 + t * 1.1) + Math.sin(y * 2.4 - t * 0.9) + Math.sin(z * 1.8 + t * 0.75) + Math.sin((x - z) * 1.5 + t * 0.55);
+      var k = 0.78 + 0.11 * w;
+      o[0] = x * k; o[1] = y * k; o[2] = z * k;
+    }
+  });
+
+  // Listening: an eye that faces you. Radial fibres, a pupil that widens and narrows,
+  // a slow glance around and a blink now and then.
+  define('iris', {
+    face: true,
+    tilt: 0,
+    alpha: 1.5,
+    lineGap: 0.3,
+    build: function (n) {
+      var rim = Math.round(n * 0.22), pupil = Math.round(n * 0.18), fibres = n - rim - pupil;
+      var spokes = Math.max(6, Math.round(Math.sqrt(fibres * 4))), per = fibres / spokes;
+      var pts = [], kind = [], ang = [], f = [], i;
+      for (i = 0; i < rim; i++) { var a = i / rim * TAU; pts.push([Math.cos(a) * 0.86, Math.sin(a) * 0.86, 0]); kind.push(0); ang.push(a); f.push(1); }
+      for (i = 0; i < pupil; i++) { var b = i / pupil * TAU; pts.push([Math.cos(b) * 0.24, Math.sin(b) * 0.24, 0]); kind.push(1); ang.push(b); f.push(0); }
+      for (i = 0; i < fibres; i++) {
+        var s = Math.floor(i / per), c = s / spokes * TAU + (s % 2) * 0.08, q = (i - s * per) / per;
+        var r = 0.3 + q * 0.46;
+        pts.push([Math.cos(c) * r, Math.sin(c) * r, 0]); kind.push(2); ang.push(c); f.push(q);
+      }
+      return { pts: pts, kind: kind, ang: ang, f: f };
+    },
+    deform: function (i, d, t, p, o) {
+      var pr = 0.24 + 0.07 * Math.sin(t * 0.9) + 0.03 * Math.sin(t * 2.3);   // pupil breathes
+      var r = d.kind[i] === 0 ? 0.86 : d.kind[i] === 1 ? pr : pr + 0.06 + d.f[i] * (0.76 - pr - 0.06);
+      var lx = d.kind[i] === 0 ? 0 : 0.07 * Math.sin(t * 0.37) + 0.03 * Math.sin(t * 1.1);   // glance
+      var ly = d.kind[i] === 0 ? 0 : 0.04 * Math.sin(t * 0.29 + 1);
+      var ph = t % 5.5, lid = ph > 5.2 ? 1 - 0.92 * Math.sin((ph - 5.2) / 0.3 * Math.PI) : 1;  // blink
+      o[0] = Math.cos(d.ang[i]) * r + lx; o[1] = (Math.sin(d.ang[i]) * r + ly) * lid; o[2] = 0;
+    },
+    size: function (i, d) { return d.kind[i] === 1 ? 1.25 : d.kind[i] === 0 ? 0.85 : 0.75 + 0.35 * (1 - d.f[i]); }
+  });
+
+  // Ambient: four soft, large dots of different sizes, each circling on its own tilted path.
+  define('orbit', {
+    tilt: 0.5,
+    spin: 0.25,
+    build: function (n) {
+      var B = [[0.13, 0.5, 0.0, 0.55, 0.0], [0.1, 0.62, 0.9, -0.42, 2.1], [0.08, 0.38, -0.6, 0.8, 4.0], [0.06, 0.72, 0.4, 0.33, 1.0]];
+      var pts = [], body = [], i;
+      var share = [0.4, 0.27, 0.2, 0.13];
+      for (i = 0; i < n; i++) {
+        var u = (i + 0.5) / n, b = 0, acc = share[0];
+        while (b < 3 && u > acc) { b++; acc += share[b]; }
+        body.push(b);
+      }
+      var count = [0, 0, 0, 0], seen = [0, 0, 0, 0];
+      body.forEach(function (b) { count[b]++; });
+      var balls = count.map(function (c) { return fib(Math.max(1, c)); });
+      for (i = 0; i < n; i++) {
+        var bb = body[i], q = balls[bb][seen[bb]++ % balls[bb].length], sz = B[bb][0] * 0.45;
+        pts.push([q[0] * sz, q[1] * sz, q[2] * sz]);
+      }
+      return { pts: pts, body: body, B: B };
+    },
+    deform: function (i, d, t, p, o) {
+      var b = d.B[d.body[i]], a = b[4] + t * b[3];
+      var cx = Math.cos(a) * b[1], cz = Math.sin(a) * b[1];
+      var cy = Math.sin(a) * b[1] * Math.sin(b[2]) * 0.6;       // each path tilted its own way
+      o[0] = p[0] + cx; o[1] = p[1] + cy; o[2] = p[2] + cz;
+    },
+    bigDots: true,
+    alpha: 0.32,                                  // many overlapping circles build up a soft, bright core
+    size: function (i, d) { return d.B[d.body[i]][0] * 55; }
   });
 
   // Status badges: a dotted ring with a mark inside. Check and cross share the ring,
@@ -805,14 +906,19 @@
     edges(sd, S, gs);
     edges(td, T, g);
 
+    function dotR(def, d, i, t, p, front) {
+      var sz = val(def.size, i, d, t, p);
+      return def.bigDots ? R * 0.01 * sz * (0.75 + front * 0.25) : dot * (0.45 + front * 0.85) * sz;
+    }
+
     // 3. dots and dashes, back to front is not needed: alpha already fades the far side
     var end = [0, 0, 0], low = -1e9, lift = A ? 0.8 + A.level * 0.6 : 1;
     for (i = 0; i < n; i++) {
       var p = this.cur[i]._p, front = F[i];
-      var size = gs * val(S.size, i, sd, t, p) + g * val(T.size, i, td, t, p);
       var alpha = gs * val(S.alpha, i, sd, t, p) + g * val(T.alpha, i, td, t, p);
       var dash = (S.dash ? gs * S.dash(i, sd, t, p) : 0) + (T.dash ? g * T.dash(i, td, t, p) : 0);
-      var r = dot * (0.45 + front * 0.85) * size;
+      // Most shapes size dots in pixels; bigDots shapes size them as a share of the orb, so they scale with it.
+      var r = gs * dotR(S, sd, i, t, p, front) + g * dotR(T, td, i, t, p, front);
       var a2 = Math.max(0, Math.min(1, (0.12 + front * 0.88) * alpha * lift));
       if (dash > 0.004) {
         tmp[0] = p[0] * (1 + dash); tmp[1] = p[1] * (1 + dash); tmp[2] = p[2] * (1 + dash);

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#000000">
+<meta name="robots" content="noindex">
+<title>Orbs Display</title>
+<style>
+  /* A full-screen stage for one orb. On an iPad, add it to the home screen for a display with no browser bars. */
+  html, body { height: 100%; margin: 0; background: #000; color: #fff; overflow: hidden; }
+  body { display: grid; place-items: center; cursor: default; -webkit-user-select: none; user-select: none; }
+  body.idle { cursor: none; }
+  #stage { display: grid; place-items: center; width: 100%; height: 100%; transition: transform 2s ease; }
+  #orb { width: min(86vw, 86vh); height: min(86vw, 86vh); display: block; }
+  .hint {
+    position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); translate: -50% 0;
+    font: 500 13px/1.3 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: rgba(255,255,255,.6);
+    padding: 8px 14px; border-radius: 10px; background: rgba(255,255,255,.08); transition: opacity .5s; white-space: nowrap; margin: 0;
+  }
+  body.idle .hint { opacity: 0; }
+  @media (prefers-reduced-motion: reduce) { #stage { transition: none; } }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+</style>
+<script src="orb.js" defer></script>
+</head>
+<body>
+<h1 class="sr-only">Orbs display</h1>
+<div id="stage"><canvas id="orb" aria-hidden="true"></canvas></div>
+<p class="hint" id="hint" role="status">Tap for full screen</p>
+<script>
+  // URL format, the same as the Studio's share links:
+  //   display.html?shape=vortex&style=lines&color=6FD8F2&glow=8&reflect=0.35&speed=0.5&sound=mic
+  // Every value is checked against what it may be, so a shared link can only set orb options.
+  document.addEventListener('DOMContentLoaded', function () {
+    var q = new URLSearchParams(location.search), o = {};
+    var num = function (k, lo, hi) { if (q.has(k) && isFinite(+q.get(k))) o[k] = Math.min(hi, Math.max(lo, +q.get(k))); };
+    o.shape = Orb.shapes[q.get('shape')] ? q.get('shape') : 'torus';
+    if (q.get('style') === 'lines') o.style = 'lines';
+    num('points', 20, 600); num('dot', 0.3, 4); num('line', 0, 8); num('speed', 0, 3); num('tilt', -90, 90); num('audioAmount', 0.1, 3);
+    num('glow', 0, 40); num('reflect', 0, 1);
+    if (q.has('cycle') && +q.get('cycle') > 0) o.cycle = Math.max(1, +q.get('cycle')) * 1000;
+    var shapes = (q.get('shapes') || '').split(',').filter(function (n) { return Orb.shapes[n]; });
+    o.shapes = shapes.length ? shapes.join(',') : (o.cycle ? undefined : o.shape);
+    if (!o.glow) delete o.glow;
+    if (!o.reflect) delete o.reflect;
+
+    var canvas = document.getElementById('orb'), hint = document.getElementById('hint');
+    var color = /^[0-9a-f]{6}$/i.test(q.get('color') || '') ? '#' + q.get('color') : '#FF7A45';
+    canvas.style.color = color;
+    var orb = new Orb(canvas, o);
+    var mic = q.get('sound') === 'mic', listening = false;
+    if (mic) hint.textContent = 'Tap for full screen and to start the microphone';
+
+    // Keep the screen awake where the browser allows it.
+    var lock = null;
+    var keepAwake = function () {
+      if (document.visibilityState !== 'visible' || !navigator.wakeLock) return;
+      navigator.wakeLock.request('screen').then(function (l) { lock = l; }, function () {});
+    };
+    keepAwake();
+    document.addEventListener('visibilitychange', keepAwake);
+
+    // Hide the cursor and the hint when idle.
+    var idle = 0;
+    var wake = function () {
+      document.body.classList.remove('idle');
+      clearTimeout(idle);
+      idle = setTimeout(function () { document.body.classList.add('idle'); }, 3000);
+    };
+    addEventListener('pointermove', wake);
+    wake();
+
+    addEventListener('click', function () {
+      var el = document.documentElement;
+      if (!document.fullscreenElement) { if (el.requestFullscreen) el.requestFullscreen().catch(function () {}); }
+      else if (document.exitFullscreen) document.exitFullscreen().catch(function () {});
+      if (mic && !listening) {                       // the microphone needs a tap to start
+        orb.listen('mic').then(function () { listening = true; hint.textContent = 'Listening. Nothing is recorded or sent anywhere.'; },
+                                function () { hint.textContent = 'The microphone is blocked here.'; });
+      }
+      keepAwake(); wake();
+    });
+
+    // Burn-in protection: drift a few pixels every minute.
+    var stage = document.getElementById('stage');
+    setInterval(function () {
+      stage.style.transform = 'translate(' + Math.round((Math.random() - 0.5) * 14) + 'px, ' + Math.round((Math.random() - 0.5) * 14) + 'px)';
+    }, 60000);
+  });
+</script>
+</body>
+</html>
