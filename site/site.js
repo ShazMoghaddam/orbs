@@ -4,10 +4,11 @@
 (function () {
   'use strict';
 
-  var CDN = 'https://cdn.jsdelivr.net/gh/ShazMoghaddam/orbs@1.5.0/orb.min.js';
+  var CDN = 'https://cdn.jsdelivr.net/gh/ShazMoghaddam/orbs@1.6.0/orb.min.js';
   var DEFAULTS = {
     shape: 'torus', style: 'dots', color: '#FF7A45', points: null, dot: 1.2, line: 0,
-    glow: 0, reflect: 0, size: 320, speed: 0.35, tilt: 0, cycle: 0, shapes: null, audioAmount: 1
+    glow: 0, reflect: 0, size: 320, speed: 0.35, tilt: 0, cycle: 0, shapes: null, audioAmount: 1,
+    state: null, follow: false, scrollTilt: false
   };
   var SWATCHES = [
     ['#FF7A45', 'Orange'], ['#EADCC6', 'Sand'], ['#6FD8F2', 'Cyan'], ['#B9A2FF', 'Violet'],
@@ -34,7 +35,8 @@
   // Options for the library, from the Studio's state.
   function orbOptions(s) {
     var o = { shape: s.shape, style: s.style, dot: s.dot, line: s.line, glow: s.glow || false, reflect: s.reflect || false,
-              speed: s.speed, tilt: s.tilt, audioAmount: s.audioAmount, cycle: s.cycle ? s.cycle * 1000 : 0 };
+              speed: s.speed, tilt: s.tilt, audioAmount: s.audioAmount, cycle: s.cycle ? s.cycle * 1000 : 0,
+              follow: s.follow, scrollTilt: s.scrollTilt };
     if (s.points) o.points = s.points;
     if (s.shapes) o.shapes = s.shapes;
     return o;
@@ -79,7 +81,7 @@
   // Load a whole state (preset, shared link, reset or surprise).
   function load(s) {
     state = Object.assign({}, DEFAULTS, s);
-    apply(['style', 'points', 'dot', 'line', 'glow', 'reflect', 'speed', 'tilt', 'cycle', 'shapes', 'audioAmount', 'color', 'size', 'shape']);
+    apply(['style', 'points', 'dot', 'line', 'glow', 'reflect', 'speed', 'tilt', 'cycle', 'shapes', 'audioAmount', 'follow', 'scrollTilt', 'color', 'size', 'shape']);
   }
 
   /* ── Shape picker ── */
@@ -90,18 +92,32 @@
     b.innerHTML = '<canvas aria-hidden="true"></canvas><span>' + name + '</span>';
     shapesEl.appendChild(b);
     new Orb($('canvas', b), { shape: name, shapes: name, points: 70, dot: 1.1 });
-    b.addEventListener('click', function () { state.shape = name; apply(['shape']); });
+    b.addEventListener('click', function () { state.shape = name; state.state = null; apply(['shape']); });
   });
   shapesEl.addEventListener('keydown', function (e) {      // arrow keys move through the shapes, as a radio group should
     var keys = { ArrowRight: 1, ArrowDown: 4, ArrowLeft: -1, ArrowUp: -4 };
     if (!(e.key in keys)) return;
     e.preventDefault();
     var i = SHAPE_NAMES.indexOf(state.shape), j = Math.max(0, Math.min(SHAPE_NAMES.length - 1, i + keys[e.key]));
-    state.shape = SHAPE_NAMES[j]; apply(['shape']);
+    state.shape = SHAPE_NAMES[j]; state.state = null; apply(['shape']);
     $('[data-shape="' + state.shape + '"]', shapesEl).focus();
   });
   // Keep the picker in step when the orb cycles by itself.
   canvas.addEventListener('orb:morph', function (e) { if (state.cycle) { state.shape = e.detail.shape; syncShapes(); } });
+
+  /* ── State picker ── */
+  var statesEl = $('[data-state-picker]');
+  Object.keys(Orb.states).forEach(function (name) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.textContent = name; b.dataset.state = name;
+    b.addEventListener('click', function () {
+      var st = Orb.states[name];
+      state.state = name; state.shape = st.shape; state.cycle = 0;
+      state.speed = st.speed != null ? st.speed : DEFAULTS.speed;
+      apply(['cycle', 'speed', 'shape']);
+    });
+    statesEl.appendChild(b);
+  });
 
   /* ── Panel tabs ── */
   var tabs = $$('[data-ptab]');
@@ -156,6 +172,9 @@
     });
   }
   toggle('glow', function () { return +$('[data-input="glow"]').value; }, 0);
+  ['follow', 'scrollTilt'].forEach(function (k) {
+    $('[data-input="' + k + '"]').addEventListener('change', function (e) { state[k] = e.target.checked; apply([k]); });
+  });
   toggle('reflect', function () { return +$('[data-input="reflect"]').value; }, 0);
   toggle('cycle', function () { return +$('[data-input="cycle"]').value; }, 0);
 
@@ -203,15 +222,19 @@
     return [plain, html];
   }
   function canvasAttrs() {
-    var s = state, a = [['data-orb', s.shape]];
+    var s = state, st = s.state && Orb.states[s.state], usesState = st && st.shape === s.shape;
+    var a = usesState ? [['data-orb', null], ['data-state', s.state]] : [['data-orb', s.shape]];
+    var stateSpeed = usesState && st.speed != null ? st.speed : DEFAULTS.speed;
     if (s.style === 'lines') a.push(['data-style', 'lines']);
     if (s.points) a.push(['data-points', s.points]);
     if (s.dot !== DEFAULTS.dot) a.push(['data-dot', s.dot]);
     if (s.line) a.push(['data-line', s.line]);
     if (s.glow) a.push(['data-glow', s.glow === 8 ? null : s.glow]);
     if (s.reflect) a.push(['data-reflect', s.reflect === 0.35 ? null : s.reflect]);
-    if (s.speed !== DEFAULTS.speed) a.push(['data-speed', s.speed]);
+    if (s.speed !== stateSpeed) a.push(['data-speed', s.speed]);
     if (s.tilt) a.push(['data-tilt', s.tilt]);
+    if (s.follow) a.push(['data-follow', null]);
+    if (s.scrollTilt) a.push(['data-scroll-tilt', null]);
     if (s.cycle) { a.push(['data-cycle', Math.round(s.cycle * 1000)]); if (s.shapes) a.push(['data-shapes', s.shapes]); }
     if (soundOn) { a.push(['data-audio', '#player']); if (s.audioAmount !== 1) a.push(['data-audio-amount', s.audioAmount]); }
     a.push(['style', 'width:' + s.size + 'px;height:' + s.size + 'px;color:' + s.color]);
@@ -225,17 +248,21 @@
     return [parts.map(function (p) { return p[0]; }).join('\n\n'), parts.map(function (p) { return p[1]; }).join('\n\n')];
   }
   function jsSnippet() {
-    var s = state, o = [];
-    o.push("shape: '" + s.shape + "'");
+    var s = state, o = [], st = s.state && Orb.states[s.state], usesState = st && st.shape === s.shape;
+    var stateSpeed = usesState && st.speed != null ? st.speed : DEFAULTS.speed;
+    o.push(usesState ? "state: '" + s.state + "'" : "shape: '" + s.shape + "'");
     if (s.style === 'lines') o.push("style: 'lines'");
     if (s.points) o.push('points: ' + s.points);
     if (s.glow) o.push('glow: ' + s.glow);
     if (s.reflect) o.push('reflect: ' + s.reflect);
-    if (s.speed !== DEFAULTS.speed) o.push('speed: ' + s.speed);
+    if (s.speed !== stateSpeed) o.push('speed: ' + s.speed);
     if (s.tilt) o.push('tilt: ' + s.tilt);
+    if (s.follow) o.push('follow: true');
+    if (s.scrollTilt) o.push('scrollTilt: true');
     var opts = o.length > 2 ? '{\n  ' + o.join(',\n  ') + '\n}' : '{ ' + o.join(', ') + ' }';
     var plain = 'const orb = new Orb(canvas, ' + opts + ');\n\n' +
-      "orb.morph('check');              // go to another shape\n" +
+      "orb.state('thinking');           // named states: idle, listening, thinking, speaking, success...\n" +
+      "orb.morph('check');              // or go to any shape\n" +
       "orb.set({ glow: 12, speed: 0.6 }); // change settings live\n" +
       "button.onclick = () => orb.listen('mic'); // react to sound\n\n" +
       "canvas.addEventListener('orb:morph', e => console.log(e.detail.shape));";
@@ -269,6 +296,8 @@
   function sync() {
     var s = state;
     syncShapes();
+    $$('button', statesEl).forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.state === s.state)); });
+    setInput('follow', s.follow); setInput('scrollTilt', s.scrollTilt);
     $$('[data-seg="style"] button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === s.style)); });
     var known = false;
     $$('.swatch[data-color]').forEach(function (b) { var on = b.dataset.color === s.color.toUpperCase(); known = known || on; b.setAttribute('aria-pressed', String(on)); });
@@ -320,7 +349,7 @@
   });
 
   // Shared links carry only the settings that differ from the defaults.
-  var KEYS = ['shape', 'style', 'color', 'points', 'dot', 'line', 'glow', 'reflect', 'size', 'speed', 'tilt', 'cycle', 'shapes', 'audioAmount'];
+  var KEYS = ['shape', 'style', 'color', 'points', 'dot', 'line', 'glow', 'reflect', 'size', 'speed', 'tilt', 'cycle', 'shapes', 'audioAmount', 'state', 'follow', 'scrollTilt'];
   function settingsQuery(skip) {
     var q = new URLSearchParams();
     KEYS.forEach(function (k) {
@@ -336,7 +365,7 @@
   });
   // The display link always names the shape, so it still opens the same orb if the defaults ever change.
   function deskUrl() {
-    var q = settingsQuery(['size', 'shape']);
+    var q = settingsQuery(['size', 'shape', 'state', 'follow', 'scrollTilt']);
     var all = new URLSearchParams('shape=' + state.shape + (q.toString() ? '&' + q : ''));
     if ($('[data-desk-mic]').checked) all.set('sound', 'mic');
     return location.origin + location.pathname.replace(/[^/]*$/, '') + 'display.html?' + all;
@@ -351,6 +380,8 @@
       else if (k === 'shape') s[k] = Orb.shapes[v] ? v : DEFAULTS.shape;
       else if (k === 'style') s[k] = v === 'lines' ? 'lines' : 'dots';
       else if (k === 'shapes') s[k] = v.split(',').filter(function (n) { return Orb.shapes[n]; }).join(',') || null;
+      else if (k === 'state') s[k] = Orb.states[v] ? v : null;
+      else if (k === 'follow' || k === 'scrollTilt') s[k] = v === 'true' || v === '1';
       else s[k] = isFinite(+v) ? +v : DEFAULTS[k];
     });
     return any ? s : null;

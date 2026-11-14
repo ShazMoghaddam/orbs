@@ -1,5 +1,5 @@
 /*!
- * Orbs v1.5.0 · dot-formation animations on <canvas>. Zero dependencies. MIT.
+ * Orbs v1.6.0 · dot-formation animations on <canvas>. Zero dependencies. MIT.
  * https://github.com/ShazMoghaddam/orbs · Shaz Moghaddam
  *
  * Usage:
@@ -26,6 +26,10 @@
  *   data-audio        CSS selector of an <audio> or <video> to react to once it plays
  *   data-audio-amount how strongly it reacts                 (default 1)
  *   data-tilt         extra tilt in degrees, -90 to 90            (default 0)
+ *   data-state        a named state: idle, listening, thinking, working, speaking,
+ *                     active, loading, success, error. Change it later to switch.
+ *   data-follow       lean towards the pointer
+ *   data-scroll-tilt  tilt as the orb scrolls through the page
  *
  * Colour comes from the canvas's CSS `color` and fades on theme change.
  * JS:  var o = new Orb(canvas, {...}); o.morph('torus'); o.next(); o.destroy();
@@ -33,6 +37,7 @@
  *      o.set({ style: 'lines', glow: 10, speed: 0.6 });   change settings while it runs
  *      canvas.addEventListener('orb:morph', e => e.detail.shape);   fires on every morph
  *      Orb.init(root);   start any <canvas data-orb> added after the page loaded
+ *      o.state('thinking');   named states pick a shape and speed; add your own to Orb.states
  *      Orb.define('myshape', { build: function (n) { return { pts: [...] }; } });
  */
 (function (global) {
@@ -527,6 +532,19 @@
   define('check', look(badge([[[-0.4, 0.03], [-0.12, 0.31], [0.42, -0.27]]])));
   define('cross', look(badge([[[-0.3, -0.3], [0.3, 0.3]], [[0.3, -0.3], [-0.3, 0.3]]])));
 
+  /* ── Named states: what an orb is doing, mapped to a shape and a pace ── */
+  var STATES = {
+    idle:      { shape: 'orbit', speed: 0.25 },
+    listening: { shape: 'iris' },
+    thinking:  { shape: 'vortex', speed: 0.5 },
+    working:   { shape: 'ticks' },
+    speaking:  { shape: 'bars' },
+    active:    { shape: 'blob' },
+    loading:   { shape: 'infinity' },
+    success:   { shape: 'check' },
+    error:     { shape: 'cross' }
+  };
+
   /* ── Sound ── */
   var AC = null;
   function audioContext() {                       // one shared context for every orb
@@ -555,8 +573,14 @@
     this.cycle = +(opts.cycle || ds.cycle || 0);
     this.order = (opts.shapes || ds.shapes || Object.keys(SHAPES).filter(function (s) { return SHAPES[s].inCycle !== false; }).join(','))
       .split(',').map(function (s) { return s.trim(); }).filter(function (s) { return SHAPES[s]; });
-    var first = opts.shape || ds.orb;
+    this.baseSpeed = this.speed;
+    this.follow = !!(opts.follow || ds.follow !== undefined);
+    this.scrollTilt = !!(opts.scrollTilt || ds.scrollTilt !== undefined);
+    this.look = [0, 0]; this.lookGoal = [0, 0];
+    var st = STATES[opts.state || ds.state];
+    var first = opts.shape || ds.orb || (st && st.shape);
     this.shape = SHAPES[first] ? first : this.order[0];
+    if (st && !(opts.shape || ds.orb)) this.shape = st.shape;
     if (this.order.indexOf(this.shape) < 0) this.order.unshift(this.shape);
 
     this.cache = {};
@@ -578,10 +602,12 @@
     this.resize();
     this.observe(opts, ds);
     this.morph(this.shape, { intro: true });
+    if (st) { this.stateName = opts.state || ds.state; if (st.speed != null) this.speed = st.speed; }
   }
 
   Orb.define = define;
   Orb.shapes = SHAPES;
+  Orb.states = STATES;
   Orb.audioContext = audioContext;
 
   Orb.prototype.data = function (name) {
@@ -625,6 +651,22 @@
         if (!el2.paused) this._play();
       }
     }
+
+    // Changing data-state on the canvas switches state, so frameworks only need to set an attribute.
+    this.so = new MutationObserver(function () { var v = self.canvas.dataset.state; if (v && v !== self.stateName) self.state(v); });
+    this.so.observe(this.canvas, { attributes: true, attributeFilter: ['data-state'] });
+
+    // Lean towards the pointer: where it sits relative to the orb, as a share of the window.
+    this._pointer = function (e) {
+      if (!self.follow) return;
+      var r = self.canvas.getBoundingClientRect();
+      var dx = (e.clientX - (r.left + r.width / 2)) / (global.innerWidth / 2);
+      var dy = (e.clientY - (r.top + r.height / 2)) / (global.innerHeight / 2);
+      self.lookGoal[0] = Math.max(-1, Math.min(1, dx)); self.lookGoal[1] = Math.max(-1, Math.min(1, dy));
+    };
+    this._pointerOut = function () { self.lookGoal[0] = self.lookGoal[1] = 0; };
+    global.addEventListener('pointermove', this._pointer, { passive: true });
+    document.documentElement.addEventListener('pointerleave', this._pointerOut);
 
     var themeMorph = opts.themeMorph || ds.themeMorph !== undefined;
     this.mo = new MutationObserver(function () {
@@ -693,7 +735,10 @@
       this.style = st;
     }
     if (o.points != null && +o.points !== this.n) { this.n = Math.max(8, +o.points | 0); this.autoPoints = false; rebuild = true; }
-    if (o.speed != null) this.speed = +o.speed;
+    if (o.speed != null) { this.speed = +o.speed; this.baseSpeed = this.speed; }
+    if (o.follow != null) { this.follow = !!o.follow; if (!this.follow) this.lookGoal[0] = this.lookGoal[1] = 0; }
+    if (o.scrollTilt != null) this.scrollTilt = !!o.scrollTilt;
+    if (o.state != null) this.state(o.state);
     if (o.dot != null) this.dot = +o.dot;
     if (o.line != null) this.line = +o.line;
     if (o.glow != null) this.glow = amount(o.glow, 8);
@@ -719,6 +764,19 @@
     }
     this.refreshColor();
     this.draw();
+    return this;
+  };
+
+  // Named states: morph to the state's shape and pace, and stop any cycling (a state is deliberate).
+  Orb.prototype.state = function (name) {
+    var st = STATES[name];
+    if (!st || !SHAPES[st.shape]) return this;
+    this.stateName = name;
+    this.cycle = 0;
+    this.speed = st.speed != null ? st.speed : this.baseSpeed;
+    if (this.canvas.dataset.state !== undefined && this.canvas.dataset.state !== name) this.canvas.dataset.state = name;
+    this.morph(st.shape);
+    if (global.CustomEvent) this.canvas.dispatchEvent(new CustomEvent('orb:state', { detail: { state: name, shape: st.shape } }));
     return this;
   };
 
@@ -803,6 +861,15 @@
     if (def.face) { var home = Math.round(this.angle / TAU) * TAU; this.angle += (home - this.angle) * ease; }   // turn to face the viewer
     else this.angle += this.speed * this.spinMul * dt;
 
+    // Cursor and scroll: a gentle lean on top of the shape's own motion, eased so it never snaps.
+    var gx = this.follow ? this.lookGoal[0] * 0.55 : 0, gy = this.follow ? this.lookGoal[1] * 0.4 : 0;
+    if (this.scrollTilt) {
+      var rr = this.canvas.getBoundingClientRect(), vh = global.innerHeight || 1;
+      gy += Math.max(-1, Math.min(1, (rr.top + rr.height / 2 - vh / 2) / (vh / 2))) * 0.5;
+    }
+    var le = Math.min(1, dt * 3);
+    this.look[0] += (gx - this.look[0]) * le; this.look[1] += (gy - this.look[1]) * le;
+
     // Morph: dots leave top to bottom in a soft cascade, with a slight outward swell mid-flight.
     if (this.morphStart) {
       var raw = (now - this.morphStart) / this.morphDur, tgt = this.data(this.shape).pts, done = true;
@@ -840,7 +907,8 @@
     var S = SHAPES[this.src], T = SHAPES[this.shape], sd = this.data(this.src), td = this.data(this.shape);
     var g = this.g, gs = 1 - g;
     var R = Math.min(w, h) * (this.reflect ? 0.33 : 0.36), cx = w / 2, cy = this.reflect ? h * 0.4 : h / 2;
-    var ca = Math.cos(this.angle), sa = Math.sin(this.angle), ct = Math.cos(this.tilt), st = Math.sin(this.tilt);
+    var yaw = this.angle + this.look[0], pitch = this.tilt + this.look[1];
+    var ca = Math.cos(yaw), sa = Math.sin(yaw), ct = Math.cos(pitch), st = Math.sin(pitch);
     var col = this.color, rgb = 'rgba(' + (col[0] | 0) + ',' + (col[1] | 0) + ',' + (col[2] | 0) + ',';
     var dot = this.dot * (0.5 + 0.5 * Math.min(1, Math.min(w, h) / 90));  // airier on small canvases
     var X = this.X, Y = this.Y, F = this.F, pos = this.pos, tmp = this.tmp, n = this.n;
@@ -1022,6 +1090,9 @@
     if (this.ro) this.ro.disconnect(); else global.removeEventListener('resize', this._resize);
     if (this.io) this.io.disconnect();
     if (this.mo) this.mo.disconnect();
+    if (this.so) this.so.disconnect();
+    global.removeEventListener('pointermove', this._pointer);
+    document.documentElement.removeEventListener('pointerleave', this._pointerOut);
     document.removeEventListener('visibilitychange', this._vis);
     if (this._hover) {
       var el = this.canvas.parentElement || this.canvas;
