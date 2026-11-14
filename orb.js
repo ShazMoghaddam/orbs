@@ -1,5 +1,5 @@
 /*!
- * Orbs v1.1.0 · dot-formation animations on <canvas>. Zero dependencies. MIT.
+ * Orbs v1.2.0 · dot-formation animations on <canvas>. Zero dependencies. MIT.
  * https://github.com/ShazMoghaddam/orbs · Shaz Moghaddam
  *
  * Usage:
@@ -11,7 +11,7 @@
  *
  * Attributes (all optional):
  *   data-orb          first shape                     (default sphere)
- *   data-points       number of dots                  (default 180)
+ *   data-points       number of dots                  (default 180, or 320 with lines)
  *   data-speed        base rotation, radians/second   (default 0.35)
  *   data-dot          dot radius in CSS px            (default 1.2)
  *   data-cycle        ms between auto-morphs, 0 = off (default 0)
@@ -19,6 +19,10 @@
  *   data-hover        "morph" to change shape on hover/tap
  *   data-click        "morph" to change shape only on click/tap (put the canvas in a <button> for keyboard users)
  *   data-theme-morph  morph when <body data-theme> changes
+ *   data-style        "dots" or "lines" (glowing vertical slices) (default dots)
+ *   data-line         line thickness in CSS px, for slices and connecting lines
+ *   data-glow         soft glow behind the shape; a number sets its size in px (default 8)
+ *   data-reflect      faded mirror image underneath; a number sets its opacity (default 0.35)
  *
  * Colour comes from the canvas's CSS `color` and fades on theme change.
  * JS:  var o = new Orb(canvas, {...}); o.morph('torus'); o.next(); o.destroy();
@@ -55,6 +59,11 @@
     var m = str && str.match(/[\d.]+/g);
     return m ? [+m[0], +m[1], +m[2]] : [222, 218, 210];
   }
+  function amount(v, def) {                       // attribute present or true -> def; a number -> that; absent, false or 0 -> off
+    if (v == null || v === false || v === 'false') return 0;
+    if (v === true || v === '') return def;
+    return isNaN(+v) ? def : +v;
+  }
   function val(v, i, d, t, p) { return typeof v === 'function' ? v(i, d, t, p) : (v == null ? 1 : v); }
 
   /*
@@ -68,6 +77,7 @@
    *   edgeAlpha         opacity of the lines listed in edges
    *   face              turn to face the viewer instead of spinning (for flat marks)
    *   inCycle           false keeps the shape out of the default cycle
+   *   lineGap           in the lines style, the widest gap (in radii) still joined into one line (default 0.45)
    */
   var SHAPES = {};
   function define(name, def) { SHAPES[name] = def; }
@@ -390,6 +400,7 @@
     face: true,
     tilt: 0,
     inCycle: false,
+    lineGap: 0.28,
     deform: sway,
     size: function (i, d) { return d.k[i] ? 1.35 : 0.85; },
     alpha: function (i, d, t) {
@@ -409,7 +420,11 @@
     opts = opts || {};
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
-    this.n = +(opts.points || ds.points || 180);
+    this.style = (opts.style || ds.style) === 'lines' ? 'lines' : 'dots';
+    this.n = +(opts.points || ds.points || (this.style === 'lines' ? 320 : 180));
+    this.line = +(opts.line || ds.line || 0);
+    this.glow = amount(opts.glow != null ? opts.glow : ds.glow, 8);
+    this.reflect = Math.min(1, amount(opts.reflect != null ? opts.reflect : ds.reflect, 0.35));
     this.speed = +(opts.speed != null ? opts.speed : (ds.speed || 0.35));
     this.dot = +(opts.dot || ds.dot || 1.2);
     this.cycle = +(opts.cycle || ds.cycle || 0);
@@ -488,6 +503,8 @@
     this.canvas.width = Math.max(1, Math.round(r.width * dpr));
     this.canvas.height = Math.max(1, Math.round(r.height * dpr));
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.dpr = dpr;
+    this.fx = null;                                   // effect canvases are rebuilt at the new size
     this.draw();
   };
 
@@ -590,7 +607,7 @@
     var t = reduceMQ.matches ? 0 : ((now || performance.now()) - this.t0) / 1000;
     var S = SHAPES[this.src], T = SHAPES[this.shape], sd = this.data(this.src), td = this.data(this.shape);
     var g = this.g, gs = 1 - g;
-    var R = Math.min(w, h) * 0.36, cx = w / 2, cy = h / 2;
+    var R = Math.min(w, h) * (this.reflect ? 0.33 : 0.36), cx = w / 2, cy = this.reflect ? h * 0.4 : h / 2;
     var ca = Math.cos(this.angle), sa = Math.sin(this.angle), ct = Math.cos(this.tilt), st = Math.sin(this.tilt);
     var col = this.color, rgb = 'rgba(' + (col[0] | 0) + ',' + (col[1] | 0) + ',' + (col[2] | 0) + ',';
     var dot = this.dot * (0.5 + 0.5 * Math.min(1, Math.min(w, h) / 90));  // airier on small canvases
@@ -620,8 +637,10 @@
       this.cur[i]._p[0] = pos[0]; this.cur[i]._p[1] = pos[1]; this.cur[i]._p[2] = pos[2];
     }
 
+    if (this.style === 'lines') { this.effects(this.slices(t, S, T, sd, td, g, R, dot)); return; }
+
     // 2. connecting lines (constellation, helix rungs, cluster links) fade with the morph
-    ctx.lineWidth = Math.max(0.5, dot * 0.45);
+    ctx.lineWidth = this.line || Math.max(0.5, dot * 0.45);
     ctx.lineCap = 'round';
     function edges(d, def, weight) {
       if (!d.edges || weight <= 0.01) return;
@@ -636,7 +655,7 @@
     edges(td, T, g);
 
     // 3. dots and dashes, back to front is not needed: alpha already fades the far side
-    var end = [0, 0, 0];
+    var end = [0, 0, 0], low = -1e9;
     for (i = 0; i < n; i++) {
       var p = this.cur[i]._p, front = F[i];
       var size = gs * val(S.size, i, sd, t, p) + g * val(T.size, i, td, t, p);
@@ -653,8 +672,90 @@
       } else {
         ctx.fillStyle = rgb + a2.toFixed(3) + ')';
         ctx.beginPath(); ctx.arc(X[i], Y[i], r, 0, TAU); ctx.fill();
+        if (a2 > 0.08 && Y[i] + r > low) low = Y[i] + r;
       }
     }
+    this.effects(low);
+  };
+
+  // Lines style: sort the projected dots into vertical columns, then join dots that sit close
+  // together in a column into one line, lit by the dots along it. Solid shapes become sliced
+  // silhouettes; rings, holes and marks keep their gaps.
+  Orb.prototype.slices = function (t, S, T, sd, td, g, R, dot) {
+    var ctx = this.ctx, n = this.n, X = this.X, Y = this.Y, F = this.F, gs = 1 - g;
+    var cols = Math.max(20, Math.min(90, Math.round(n / 5)));
+    var sp = Math.max(3, 2.3 * R / cols), lw = this.line || Math.max(1, sp * 0.46);
+    var gap = R * (g < 0.5 ? (S.lineGap || 0.45) : (T.lineGap || 0.45)), cap = Math.max(lw, R * 0.025), low = -1e9;
+    var col = this.color, rgb = 'rgba(' + (col[0] | 0) + ',' + (col[1] | 0) + ',' + (col[2] | 0) + ',';
+    var C = this.sC || (this.sC = []), Ys = this.sY || (this.sY = []), A = this.sA || (this.sA = []), idx = [], m = 0;
+    for (var i = 0; i < n; i++) {
+      var p = this.cur[i]._p;
+      var alpha = gs * val(S.alpha, i, sd, t, p) + g * val(T.alpha, i, td, t, p);
+      var a = Math.max(0, Math.min(1, (0.2 + F[i] * 0.8) * alpha * 1.5));   // lines are thinner than dots, so lift them
+      if (a < 0.02) continue;
+      if (a > 0.08 && Y[i] > low) low = Y[i];
+      var fx = X[i] / sp, c0 = Math.floor(fx), fr = fx - c0;         // share each dot between its two nearest
+      if (fr < 0.97) { C[m] = c0; Ys[m] = Y[i]; A[m] = a * (1 - fr); idx.push(m++); }   // columns, so motion stays smooth
+      if (fr > 0.03) { C[m] = c0 + 1; Ys[m] = Y[i]; A[m] = a * fr; idx.push(m++); }
+    }
+    idx.sort(function (u, v) { return C[u] - C[v] || Ys[u] - Ys[v]; });
+    ctx.lineWidth = lw; ctx.lineCap = 'round';
+    for (var s = 0; s < idx.length;) {
+      var e = s;                                                      // grow a run of close dots in one column
+      while (e + 1 < idx.length && C[idx[e + 1]] === C[idx[s]] && Ys[idx[e + 1]] - Ys[idx[e]] < gap) e++;
+      var x = C[idx[s]] * sp, y0 = Ys[idx[s]] - cap, y1 = Ys[idx[e]] + cap;
+      if (e === s) ctx.strokeStyle = rgb + A[idx[s]].toFixed(3) + ')';
+      else {
+        var grad = ctx.createLinearGradient(0, y0, 0, y1);
+        for (var k = s; k <= e; k++) grad.addColorStop((Ys[idx[k]] - y0) / (y1 - y0), rgb + A[idx[k]].toFixed(3) + ')');
+        ctx.strokeStyle = grad;
+      }
+      ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, y1); ctx.stroke();
+      s = e + 1;
+    }
+    return low + cap;
+  };
+
+  // Glow and reflection, drawn from a copy of the finished frame. Both are off unless asked for.
+  Orb.prototype.effects = function (low) {
+    if (!this.glow && !this.reflect) return;
+    // The reflection sits just under the shape's lowest point, eased so it glides rather than jitters.
+    if (low > -1e8) this.floor = this.floor == null || reduceMQ.matches ? low : this.floor + (low - this.floor) * 0.08;
+    var floor = (this.floor || this.h * 0.75) + 4;
+    var ctx = this.ctx, cv = this.canvas, W = cv.width, H = cv.height, dpr = this.dpr || 1;
+    if (!this.fx) {
+      var mk = function (k) { var c = document.createElement('canvas'); c.width = Math.ceil(W / k); c.height = Math.ceil(H / k); return c; };
+      this.fx = { copy: mk(1), mirror: mk(1), small: mk(4) };
+    }
+    var copy = this.fx.copy, cc = copy.getContext('2d');
+    cc.clearRect(0, 0, W, H); cc.drawImage(cv, 0, 0);
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    if (this.glow && 'filter' in ctx) {                    // blur a quarter-size copy (cheap), then lay it behind
+      var sm = this.fx.small, sc = sm.getContext('2d');
+      sc.clearRect(0, 0, sm.width, sm.height);
+      sc.filter = 'blur(' + (this.glow * dpr / 4).toFixed(2) + 'px)';
+      sc.drawImage(copy, 0, 0, sm.width, sm.height);
+      sc.filter = 'none';
+      ctx.globalCompositeOperation = 'destination-over';
+      ctx.drawImage(sm, 0, 0, W, H);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+    if (this.reflect) {                                    // flip about the floor, squash, then fade out downwards
+      var mir = this.fx.mirror, mc = mir.getContext('2d'), fy = floor * dpr, sq = 0.55;
+      mc.setTransform(1, 0, 0, 1, 0, 0); mc.globalCompositeOperation = 'source-over';
+      mc.clearRect(0, 0, W, H);
+      mc.setTransform(1, 0, 0, -sq, 0, fy * (1 + sq));
+      mc.drawImage(copy, 0, 0);
+      mc.setTransform(1, 0, 0, 1, 0, 0);
+      mc.globalCompositeOperation = 'destination-in';
+      var fade = mc.createLinearGradient(0, fy, 0, Math.min(H, fy + (H - fy) * 0.95));
+      fade.addColorStop(0, 'rgba(0,0,0,' + this.reflect + ')'); fade.addColorStop(1, 'rgba(0,0,0,0)');
+      mc.fillStyle = fade; mc.fillRect(0, fy, W, H - fy);
+      mc.clearRect(0, 0, W, fy);
+      ctx.drawImage(mir, 0, 0);
+    }
+    ctx.restore();
   };
 
   Orb.prototype.destroy = function () {

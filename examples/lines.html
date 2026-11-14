@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orbs example: lines style</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: radial-gradient(80% 70% at 50% 40%, #0B1A2E, #03060C 75%); color: #CFE6F2; display: grid; place-items: center; min-height: 100vh; margin: 0; }
+  main { display: grid; justify-items: center; gap: 1.2rem; padding: 2rem 1rem; }
+  canvas { width: min(440px, 88vw); height: min(440px, 88vw); color: #6FD8F2; }
+  .row { display: flex; flex-wrap: wrap; justify-content: center; gap: .45rem; }
+  button { font: inherit; font-size: .9rem; color: inherit; background: none; border: 1px solid #2A3D52; border-radius: 999px; padding: .35rem .95rem; cursor: pointer; }
+  button:hover, button:focus-visible { border-color: #6FD8F2; outline: none; }
+  button[aria-pressed="true"] { border-color: #6FD8F2; color: #6FD8F2; }
+</style>
+</head>
+<body>
+<main>
+  <canvas id="orb" aria-hidden="true"></canvas>
+  <div class="row" id="shapes" role="group" aria-label="Shape"></div>
+  <div class="row" role="group" aria-label="Look">
+    <button type="button" id="style" aria-pressed="true">Lines</button>
+    <button type="button" id="glow" aria-pressed="true">Glow</button>
+    <button type="button" id="reflect" aria-pressed="true">Reflection</button>
+  </div>
+</main>
+
+<script src="../orb.js"></script>
+<script>
+  // Lines style with glow and reflection. Each toggle rebuilds the orb with the new options.
+  const canvas = document.getElementById('orb');
+  const opts = { shape: 'bars', style: 'lines', glow: true, reflect: true };
+  let orb;
+  function build() {
+    if (orb) { opts.shape = orb.shape; orb.destroy(); }
+    orb = new Orb(canvas, Object.assign({ shapes: opts.shape }, opts));
+  }
+  build();
+
+  const shapes = ['bars', 'sphere', 'wave', 'torus', 'ripple', 'infinity', 'check'];
+  const group = document.getElementById('shapes');
+  shapes.forEach(name => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = name;
+    b.setAttribute('aria-pressed', String(name === opts.shape));
+    b.addEventListener('click', () => {
+      orb.order = [name]; orb.morph(name);
+      group.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    });
+    group.appendChild(b);
+  });
+
+  function toggle(id, key, on, off) {
+    const b = document.getElementById(id);
+    b.addEventListener('click', () => {
+      const now = b.getAttribute('aria-pressed') !== 'true';
+      b.setAttribute('aria-pressed', String(now));
+      opts[key] = now ? on : off;
+      build();
+    });
+  }
+  toggle('style', 'style', 'lines', 'dots');
+  toggle('glow', 'glow', true, false);
+  toggle('reflect', 'reflect', true, false);
+</script>
+</body>
+</html>
