@@ -1,12 +1,13 @@
 /*!
- * Orbs v1.0.3 · dot-formation animations on <canvas>. Zero dependencies. MIT.
+ * Orbs v1.1.0 · dot-formation animations on <canvas>. Zero dependencies. MIT.
  * https://github.com/ShazMoghaddam/orbs · Shaz Moghaddam
  *
  * Usage:
  *   <canvas data-orb="sphere" aria-hidden="true"></canvas>
  *   <script src="orb.js" defer></script>   (or inline it)
  *
- * Shapes: sphere, wave, spikes, constellation, torus, helix, galaxy, ticks, cube, clusters
+ * Shapes: sphere, wave, spikes, constellation, torus, helix, galaxy, ticks, cube, clusters,
+ *         ripple, bars, atom, infinity, check, cross
  *
  * Attributes (all optional):
  *   data-orb          first shape                     (default sphere)
@@ -14,7 +15,7 @@
  *   data-speed        base rotation, radians/second   (default 0.35)
  *   data-dot          dot radius in CSS px            (default 1.2)
  *   data-cycle        ms between auto-morphs, 0 = off (default 0)
- *   data-shapes       comma list to cycle through     (default all)
+ *   data-shapes       comma list to cycle through     (default all except check and cross)
  *   data-hover        "morph" to change shape on hover/tap
  *   data-click        "morph" to change shape only on click/tap (put the canvas in a <button> for keyboard users)
  *   data-theme-morph  morph when <body data-theme> changes
@@ -65,6 +66,8 @@
    *   dash(i,d,t,p)     >0 draws a radial stroke of that length instead of a dot
    *   size, alpha       number or function(i,d,t,p) multiplier per dot
    *   edgeAlpha         opacity of the lines listed in edges
+   *   face              turn to face the viewer instead of spinning (for flat marks)
+   *   inCycle           false keeps the shape out of the default cycle
    */
   var SHAPES = {};
   function define(name, def) { SHAPES[name] = def; }
@@ -257,6 +260,148 @@
     }
   });
 
+  // Listening: rings spread out from the centre and fade at the edge, like sound on water.
+  define('ripple', {
+    tilt: 1.05,
+    spin: 0.15,
+    build: function (n) {
+      var rings = 6, per = n / rings, pts = [], f = [], a = [];
+      for (var i = 0; i < n; i++) {
+        var r = Math.floor(i / per), ang = (i - r * per) / per * TAU + r, fr = r / rings;
+        pts.push([Math.cos(ang) * fr * 0.95, 0, Math.sin(ang) * fr * 0.95]);
+        f.push(fr); a.push(ang);
+      }
+      return { pts: pts, f: f, a: a };
+    },
+    deform: function (i, d, t, p, o) {
+      var r = ((d.f[i] + t * 0.16) % 1) * 0.95;
+      o[0] = Math.cos(d.a[i]) * r; o[1] = 0; o[2] = Math.sin(d.a[i]) * r;
+    },
+    alpha: function (i, d, t) { return 1.1 * Math.sin(((d.f[i] + t * 0.16) % 1) * Math.PI); },
+    size: function (i, d, t) { return 0.7 + 0.6 * ((d.f[i] + t * 0.16) % 1); }
+  });
+
+  // Speaking: columns of dots rising and falling, tallest in the middle.
+  define('bars', {
+    face: true,
+    tilt: 0,
+    alpha: 1.6,
+    build: function (n) {
+      var B = 11, pts = [], bar = [], fy = [];
+      for (var i = 0; i < n; i++) {                // spread dots evenly across bars, so none double up
+        var b = Math.floor(i * B / n), first = Math.ceil(b * n / B), count = Math.ceil((b + 1) * n / B) - first;
+        var y = count > 1 ? (i - first) / (count - 1) * 2 - 1 : 0;
+        pts.push([(b - (B - 1) / 2) * 0.15, y * 0.6, 0]);
+        bar.push(b); fy.push(y);
+      }
+      return { pts: pts, bar: bar, fy: fy, mid: (B - 1) / 2 };
+    },
+    deform: function (i, d, t, p, o) {
+      var b = d.bar[i], v = 0.5 + 0.5 * Math.sin(t * 3.3 + b * 1.9) * Math.sin(t * 1.4 + b * 0.7);
+      var h = 0.1 + 0.7 * v * (1 - Math.abs(b - d.mid) / (d.mid + 2));
+      o[0] = p[0]; o[1] = d.fy[i] * h; o[2] = p[2];
+    }
+  });
+
+  // Atom: a small nucleus with three tilted orbits, each carrying a bright electron.
+  define('atom', {
+    tilt: 0.45,
+    spin: 0.5,
+    build: function (n) {
+      var core = Math.max(8, Math.round(n * 0.14)), rest = n - core, per = Math.ceil(rest / 3), phi = 1.2;
+      var pts = fib(core).map(function (p) { return [p[0] * 0.13, p[1] * 0.13, p[2] * 0.13]; });
+      var orbit = pts.map(function () { return -1; }), ang = pts.map(function () { return 0; });
+      for (var i = 0; i < rest; i++) {
+        var o = i % 3, a = Math.floor(i / 3) / per * TAU, rot = o * Math.PI / 3;
+        var ux = Math.cos(rot), uz = -Math.sin(rot);                                           // orbit axes,
+        var vx = Math.sin(phi) * Math.sin(rot), vy = Math.cos(phi), vz = Math.sin(phi) * Math.cos(rot); // turned 60° apart
+        pts.push([(Math.cos(a) * ux + Math.sin(a) * vx) * 0.88, Math.sin(a) * vy * 0.88, (Math.cos(a) * uz + Math.sin(a) * vz) * 0.88]);
+        orbit.push(o); ang.push(a);
+      }
+      return { pts: pts, orbit: orbit, ang: ang };
+    },
+    size: function (i, d, t) {
+      if (d.orbit[i] < 0) return 1.5;
+      return 0.6 + 1.6 * Math.pow(0.5 + 0.5 * Math.cos(d.ang[i] - t * 2.2 - d.orbit[i] * 2.1), 14);
+    },
+    alpha: function (i, d, t) {
+      if (d.orbit[i] < 0) return 1;
+      return 0.5 + 0.9 * Math.pow(0.5 + 0.5 * Math.cos(d.ang[i] - t * 2.2 - d.orbit[i] * 2.1), 8);
+    }
+  });
+
+  // Flat marks (infinity, check, cross) are drawn as clean single strokes of evenly spaced dots.
+  // stroke() spreads n dots along a path of [x, y] points by length; y runs down the screen.
+  function stroke(path, n) {
+    var lens = [], total = 0, pts = [], u = [], i;
+    for (i = 1; i < path.length; i++) {
+      var l = Math.sqrt(Math.pow(path[i][0] - path[i - 1][0], 2) + Math.pow(path[i][1] - path[i - 1][1], 2));
+      lens.push(l); total += l;
+    }
+    for (i = 0; i < n; i++) {
+      var f = n > 1 ? i / (n - 1) : 0, d = f * total, s = 0;
+      while (s < lens.length - 1 && d > lens[s]) { d -= lens[s]; s++; }
+      var a = path[s], b = path[s + 1], q = lens[s] ? Math.min(1, d / lens[s]) : 0;
+      pts.push([a[0] + (b[0] - a[0]) * q, a[1] + (b[1] - a[1]) * q, 0]);
+      u.push(f);
+    }
+    return { pts: pts, u: u };
+  }
+  function sway(i, d, t, p, o) {                  // a slight turn, so flat marks still feel alive
+    var a = 0.12 * Math.sin(t * 1.1), c = Math.cos(a), s = Math.sin(a);
+    o[0] = p[0] * c - p[2] * s; o[1] = p[1]; o[2] = p[0] * s + p[2] * c;
+  }
+
+  // Loader: a figure of eight with a bright pulse running round it.
+  define('infinity', {
+    face: true,
+    tilt: 0,
+    build: function (n) {
+      var path = [];
+      for (var j = 0; j <= 160; j++) {
+        var s = j / 160 * TAU, den = 1 + Math.sin(s) * Math.sin(s);
+        path.push([0.9 * Math.cos(s) / den, 0.9 * Math.sin(s) * Math.cos(s) / den]);
+      }
+      return stroke(path, n);
+    },
+    deform: sway,
+    size: function (i, d, t) { return 0.8 + 0.9 * Math.pow(0.5 + 0.5 * Math.cos((d.u[i] - t * 0.35) * TAU), 6); },
+    alpha: function (i, d, t) { return 0.5 + 1.2 * Math.pow(0.5 + 0.5 * Math.cos((d.u[i] - t * 0.35) * TAU), 6); }
+  });
+
+  // Status badges: a dotted ring with a mark inside. Check and cross share the ring,
+  // so going from one to the other only redraws the mark. Kept out of the default cycle.
+  function badge(marks) {
+    return function (n) {
+      var ring = Math.round(n * 0.6), rest = n - ring, pts = [], u = [], k = [], i;
+      for (i = 0; i < ring; i++) {
+        var a = i / ring * TAU - Math.PI / 2;
+        pts.push([Math.cos(a) * 0.86, Math.sin(a) * 0.86, 0]); u.push(i / ring); k.push(0);
+      }
+      for (var m = 0; m < marks.length; m++) {
+        var c = m === marks.length - 1 ? rest - Math.floor(rest / marks.length) * m : Math.floor(rest / marks.length);
+        var s = stroke(marks[m], c);
+        for (i = 0; i < c; i++) { pts.push(s.pts[i]); u.push(s.u[i]); k.push(1); }
+      }
+      return { pts: pts, u: u, k: k };
+    };
+  }
+  var badgeLook = {
+    face: true,
+    tilt: 0,
+    inCycle: false,
+    deform: sway,
+    size: function (i, d) { return d.k[i] ? 1.35 : 0.85; },
+    alpha: function (i, d, t) {
+      if (d.k[i]) return 1.8;
+      return 0.9 + 0.5 * Math.pow(0.5 + 0.5 * Math.cos((d.u[i] - t * 0.25) * TAU), 4);   // a soft light circling the ring
+    }
+  };
+  function look(build) { var o = { build: build }; for (var key in badgeLook) o[key] = badgeLook[key]; return o; }
+
+  define('check', look(badge([[[-0.4, 0.03], [-0.12, 0.31], [0.42, -0.27]]])));
+  define('cross', look(badge([[[-0.3, -0.3], [0.3, 0.3]], [[0.3, -0.3], [-0.3, 0.3]]])));
+
   /* ── Orb ── */
   function Orb(canvas, opts) {
     if (!(this instanceof Orb)) return new Orb(canvas, opts);
@@ -268,7 +413,7 @@
     this.speed = +(opts.speed != null ? opts.speed : (ds.speed || 0.35));
     this.dot = +(opts.dot || ds.dot || 1.2);
     this.cycle = +(opts.cycle || ds.cycle || 0);
-    this.order = (opts.shapes || ds.shapes || Object.keys(SHAPES).join(','))
+    this.order = (opts.shapes || ds.shapes || Object.keys(SHAPES).filter(function (s) { return SHAPES[s].inCycle !== false; }).join(','))
       .split(',').map(function (s) { return s.trim(); }).filter(function (s) { return SHAPES[s]; });
     var first = opts.shape || ds.orb;
     this.shape = SHAPES[first] ? first : this.order[0];
@@ -375,6 +520,7 @@
       this.cur = t.map(function (p) { return p.slice(); });
       this.src = name; this.g = 1; this.morphStart = 0;
       this.tilt = SHAPES[name].tilt != null ? SHAPES[name].tilt : 0.38;
+      if (SHAPES[name].face) this.angle = Math.round(this.angle / TAU) * TAU;
       this.draw();
     }
     this.wake();
@@ -405,7 +551,8 @@
     var ease = Math.min(1, dt * 2.5);
     this.tilt += (tiltGoal - this.tilt) * ease;
     this.spinMul += (spinGoal - this.spinMul) * ease;
-    this.angle += this.speed * this.spinMul * dt;
+    if (def.face) { var home = Math.round(this.angle / TAU) * TAU; this.angle += (home - this.angle) * ease; }   // turn to face the viewer
+    else this.angle += this.speed * this.spinMul * dt;
 
     // Morph: dots leave top to bottom in a soft cascade, with a slight outward swell mid-flight.
     if (this.morphStart) {
