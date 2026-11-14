@@ -3,37 +3,44 @@
 <meta charset="utf-8">
 <title>Orbs social preview</title>
 <!-- Renders docs/social-preview.png (1280 x 640), the image shown when the repository or site is shared:
-     python3 scripts/shot.py http://localhost:4173/docs/social.html docs/social-preview.png 1280 640 -->
+     python3 scripts/shot.py http://localhost:4173/docs/social.html docs/social-preview.png 1280 640
+     GitHub's limit is 1 MB and the glow makes the raw render about 1.5 MB, so reduce it to 256 colours:
+     python3 -c "from PIL import Image; Image.open('docs/social-preview.png').convert('RGB').quantize(256).save('docs/social-preview.png', optimize=True)" -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Geist:wght@300..800&family=Geist+Mono:wght@400..600&display=swap">
 <style>
   html, body { margin: 0; width: 1280px; height: 640px; overflow: hidden; }
   body {
     position: relative; font-family: "Geist", "Geist Variable", sans-serif; color: #F2EDE4;
-    background: radial-gradient(110% 120% at 10% 0%, #1B1C16 0%, #0E0F0B 70%);
+    background: radial-gradient(55% 75% at 76% 45%, #2A1A10 0%, #0E0F0B 70%);
   }
-  /* The footer's orange and sand, as a diagonal panel behind the orbs. */
-  .split { position: absolute; inset: 0 0 0 auto; width: 640px; background: linear-gradient(to bottom right, #FF7A45 50%, #EADCC6 50%); clip-path: polygon(18% 0, 100% 0, 100% 100%, 0 100%); }
-  .copy { position: absolute; left: 72px; top: 0; bottom: 0; width: 560px; display: grid; align-content: center; gap: 26px; }
-  .mark { display: flex; align-items: center; gap: 12px; font-size: 34px; font-weight: 650; letter-spacing: -0.02em; color: #EADCC6; }
+  .copy { position: absolute; left: 72px; top: 0; bottom: 64px; width: 500px; display: grid; align-content: center; gap: 24px; }
+  .mark { display: flex; align-items: center; gap: 12px; font-size: 32px; font-weight: 650; letter-spacing: -0.02em; color: #EADCC6; }
   .mark canvas { width: 46px; height: 46px; color: #FF7A45; }
-  h1 { margin: 0; font: 400 66px/1.02 "Fraunces", "Fraunces Variable", serif; letter-spacing: -0.012em; font-variation-settings: "opsz" 144; }
+  h1 { margin: 0; font: 400 68px/1.02 "Fraunces", "Fraunces Variable", serif; letter-spacing: -0.012em; font-variation-settings: "opsz" 144; }
   h1 em { color: #FF7A45; }
-  .sub { font: 500 20px/1.4 "Geist Mono", "Geist Mono Variable", monospace; color: #A49F93; letter-spacing: .01em; }
-  .orbs { position: absolute; right: 56px; top: 50%; translate: 0 -50%; display: grid; grid-template-columns: 230px 230px; gap: 20px 28px; }
-  .orbs canvas { width: 230px; height: 230px; color: #2B0E02; display: block; }
+  .sub { font: 500 18px/1.5 "Geist Mono", "Geist Mono Variable", monospace; color: #A49F93; }
+
+  /* Four orbs in a grid: constellation, wave, spikes and infinity. */
+  .orbs { position: absolute; left: 640px; right: 56px; top: 0; bottom: 64px; display: grid; grid-template-columns: 1fr 1fr; place-items: center; align-content: center; gap: 0 12px; }
+  .orbs canvas { display: block; color: #FF7A45; width: 262px; height: 262px; }
+
+  /* Signature strip in the footer's orange and sand. */
+  .sign { position: absolute; left: 0; right: 0; bottom: 0; height: 64px; background: linear-gradient(100deg, #FF7A45 0 58%, #EADCC6 58% 100%); color: #2B0E02; display: flex; align-items: center; justify-content: space-between; padding: 0 72px; font-size: 21px; }
+  .sign b { font-weight: 650; }
+  .sign span { font: 600 20px "Geist Mono", "Geist Mono Variable", monospace; color: #3A2912; }
 </style>
 
-<div class="split"></div>
 <div class="copy">
   <div class="mark"><canvas data-orb="sphere" data-points="60" data-dot="1.2" data-shapes="sphere" aria-hidden="true"></canvas>Orbs</div>
-  <h1>Dot animations that <em>morph</em>, in one line of HTML.</h1>
-  <div class="sub">16 shapes · one file · no dependencies</div>
+  <h1>Dot animations<br>that <em>morph</em>.</h1>
+  <div class="sub">One line of HTML · 16 shapes<br>Lines, glow and sound · no dependencies</div>
 </div>
 <div class="orbs">
-  <canvas data-orb="torus" data-shapes="torus" data-dot="1.9" aria-hidden="true"></canvas>
-  <canvas data-orb="bars" data-shapes="bars" data-dot="2" aria-hidden="true"></canvas>
-  <canvas data-orb="infinity" data-shapes="infinity" data-dot="2" aria-hidden="true"></canvas>
-  <canvas data-orb="check" data-shapes="check" data-dot="2" aria-hidden="true"></canvas>
+  <canvas data-orb="constellation" data-shapes="constellation" data-glow="6" data-dot="1.8" aria-hidden="true"></canvas>
+  <canvas data-orb="wave" data-shapes="wave" data-style="lines" data-glow aria-hidden="true"></canvas>
+  <canvas data-orb="spikes" data-shapes="spikes" data-glow="6" data-dot="1.7" aria-hidden="true"></canvas>
+  <canvas data-orb="infinity" data-shapes="infinity" data-glow="6" data-dot="1.9" aria-hidden="true"></canvas>
 </div>
+<div class="sign"><p>Created by <b>Shaz Moghaddam</b> · London</p><span>shazmoghaddam.github.io</span></div>
 <script src="../orb.js"></script>
 </html>
