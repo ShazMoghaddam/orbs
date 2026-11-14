@@ -1,207 +1,273 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Orbs · dot-formation animations for the web</title>
-<meta name="description" content="Sixteen morphing dot-formation animations on canvas. One file, about 9 KB gzipped, no dependencies.">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Orbs · dot animations that morph</title>
+<meta name="description" content="Sixteen morphing dot animations for the web, with a lines style, glow and sound. Design one in the Studio, then copy one line of HTML. One file, no dependencies.">
+<link rel="canonical" href="https://shazmoghaddam.github.io/orbs/">
+<!-- Shown when the link is shared on LinkedIn, Slack, WhatsApp, X and the like -->
 <meta property="og:type" content="website">
+<meta property="og:site_name" content="Orbs">
 <meta property="og:title" content="Orbs · dot animations that morph">
-<meta property="og:description" content="Sixteen morphing dot-formation animations on canvas. One file, about 9 KB gzipped, no dependencies.">
+<meta property="og:description" content="Free, open-source canvas animations. Design an orb in the Studio, then copy one line of HTML. One file, no dependencies.">
 <meta property="og:url" content="https://shazmoghaddam.github.io/orbs/">
 <meta property="og:image" content="https://shazmoghaddam.github.io/orbs/docs/social-preview.png">
 <meta property="og:image:width" content="2560">
 <meta property="og:image:height" content="1280">
-<meta property="og:image:alt" content="Orbs: dot animations that morph, in one line of HTML. A torus, bars, an infinity loop and a check badge drawn in dots.">
+<meta property="og:image:alt" content="Orbs: dot animations that morph. A constellation, a wave in glowing lines, spikes and an infinity loop.">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0E0F0B">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230E0F0B'/%3E%3Cg fill='%23FF7A45'%3E%3Ccircle cx='16' cy='7.5' r='1.6'/%3E%3Ccircle cx='22' cy='10' r='1.6'/%3E%3Ccircle cx='24.5' cy='16' r='1.6'/%3E%3Ccircle cx='22' cy='22' r='1.6'/%3E%3Ccircle cx='16' cy='24.5' r='1.6'/%3E%3Ccircle cx='10' cy='22' r='1.6'/%3E%3Ccircle cx='7.5' cy='16' r='1.6'/%3E%3Ccircle cx='10' cy='10' r='1.6'/%3E%3Ccircle cx='16' cy='16' r='2.4'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital@0;1&family=DM+Sans:wght@400;500&family=DM+Mono&display=swap" rel="stylesheet">
-<style>
-:root { --bg:#0e0f0b; --text:#dedad2; --muted:#8a8a7e; --accent:#FF4400; --line:rgba(255,255,255,.09); --code:rgba(255,255,255,.04); }
-[data-theme="light"] { --bg:#dedede; --text:#191919; --muted:#5f5f5f; --accent:#c43400; --line:rgba(0,0,0,.13); --code:rgba(0,0,0,.04); }
-* { box-sizing:border-box; margin:0; }
-body { background:var(--bg); color:var(--text); font-family:'DM Sans',system-ui,sans-serif; line-height:1.6; transition:background .6s,color .6s; }
-a { color:inherit; }
-.wrap { max-width:1080px; margin:0 auto; padding:0 1.5rem; }
-header.top { display:flex; justify-content:space-between; align-items:center; padding:1.2rem 0; font-size:.9rem; }
-header.top nav { display:flex; gap:1.2rem; align-items:center; }
-button { font:inherit; color:inherit; background:none; border:1px solid var(--line); border-radius:999px; padding:.45rem 1.1rem; cursor:pointer; }
-button:hover, button:focus-visible { border-color:var(--text); outline:none; }
-button[aria-pressed="true"] { border-color:var(--accent); color:var(--accent); }
-
-.hero { display:grid; grid-template-columns:1fr 1fr; gap:2rem; align-items:center; padding:3rem 0 4rem; }
-.hero h1 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(3rem,7vw,5.5rem); line-height:1; }
-.hero h1 em { color:var(--accent); }
-.hero p { color:var(--muted); max-width:34ch; margin:1.2rem 0 1.6rem; font-size:1.05rem; }
-.stage { aspect-ratio:1; width:100%; max-width:460px; justify-self:center; color:var(--accent); }
-.picker { display:flex; flex-wrap:wrap; gap:.5rem; }
-.picker button { padding:.3rem .8rem; font-size:.85rem; }
-
-h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:2rem; margin:0 0 .4rem; }
-section { padding:3rem 0; border-top:1px solid var(--line); }
-.lead { color:var(--muted); margin-bottom:1.6rem; }
-
-.grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); }
-.card { background:var(--bg); padding:1rem 1rem 1.1rem; transition:background .6s; display:flex; flex-direction:column; }
-.card canvas { width:100%; aspect-ratio:1; display:block; }
-.card strong { font-weight:500; }
-.card span { color:var(--muted); font-size:.82rem; flex:1; }
-.card button { margin-top:.7rem; font-family:'DM Mono',monospace; font-size:.72rem; padding:.35rem .6rem; border-radius:6px; text-align:left; background:var(--code); width:100%; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-
-pre { font-family:'DM Mono',monospace; font-size:.85rem; background:var(--code); border:1px solid var(--line); border-radius:8px; padding:1rem 1.2rem; overflow-x:auto; margin:.6rem 0 1.4rem; }
-.cols { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:2rem; }
-.pills { display:flex; gap:1rem; flex-wrap:wrap; margin-top:.5rem; }
-.pill { display:inline-flex; align-items:center; gap:.6rem; padding:.35rem 1.1rem .35rem .45rem; border:1px solid var(--line); border-radius:999px; }
-.pill canvas { width:38px; height:38px; }
-.letter { font-family:'Playfair Display',serif; font-style:italic; font-size:clamp(3rem,8vw,5rem); line-height:1.1; }
-.letter .orb-o { position:relative; display:inline-block; }
-.letter .orb-o canvas { position:absolute; left:51%; top:62%; width:.72em; height:.72em; transform:translate(-50%,-50%); color:var(--accent); }
-.letter .orb-o.orb-ready { color:transparent; }
-
-footer { padding:2.5rem 0 3rem; border-top:1px solid var(--line); color:var(--muted); font-size:.9rem; }
-.toast { position:fixed; left:50%; bottom:1.5rem; transform:translateX(-50%); background:var(--text); color:var(--bg); padding:.5rem 1rem; border-radius:999px; font-size:.85rem; opacity:0; transition:opacity .3s; pointer-events:none; }
-.toast.show { opacity:1; }
-
-@media (max-width:860px) { .grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .hero, .cols { grid-template-columns:1fr; } }
-</style>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..800&family=Geist+Mono:wght@400..600&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&display=swap">
+<link rel="stylesheet" href="site/site.css">
+<script src="orb.js" defer></script>
+<script src="site/site.js" defer></script>
 </head>
 <body>
-<div class="wrap">
-  <header class="top">
-    <strong>Orbs</strong>
-    <nav>
+<!--SITE-BODY-START-->
+<header class="bar">
+  <div class="bar__in">
+    <a class="mark" href="#top" aria-label="Orbs home"><canvas class="mark__orb" data-orb="sphere" data-points="44" data-dot="1.1" data-shapes="sphere" aria-hidden="true"></canvas>Orbs</a>
+    <nav class="bar__nav" aria-label="Sections">
+      <a href="#studio">Studio</a>
+      <a href="#install">Get the code</a>
       <a href="https://github.com/ShazMoghaddam/orbs">GitHub</a>
-      <button id="theme" type="button">Light theme</button>
     </nav>
-  </header>
-
-  <div class="hero">
-    <div>
-      <h1>Orbs, <em>in dots.</em></h1>
-      <p>Sixteen morphing dot formations for loaders, AI states, status badges and hero moments. One file, about 9 KB gzipped, no dependencies.</p>
-      <div class="picker" id="picker" role="group" aria-label="Choose a shape"></div>
-    </div>
-    <canvas class="stage" id="stage" data-points="260" data-dot="1.6" aria-hidden="true"></canvas>
   </div>
+</header>
 
-  <section>
-    <h2>Shapes</h2>
-    <p class="lead">Each one has its own silhouette, drawing style and motion. Click a snippet to copy it.</p>
-    <div class="grid" id="grid"></div>
-  </section>
+<main id="top">
+  <section class="hero" aria-labelledby="hero-h">
+    <div class="hero__copy">
+      <h1 id="hero-h">Dot animations that <em>morph</em>.</h1>
+      <p class="hero__lede">Sixteen shapes for loaders, AI states, status badges and hero moments. Draw them as dots or glowing lines, let them move with sound, then copy one line of HTML.</p>
+    </div>
 
-  <section>
-    <h2>Quick start</h2>
-    <div class="cols">
-      <div>
-        <p class="lead">Drop in the script, add a canvas. Size it with CSS and colour it with <code>color</code>.</p>
-<pre>&lt;canvas data-orb="torus"
-        style="width:200px;height:200px;color:#FF4400"
-        aria-hidden="true"&gt;&lt;/canvas&gt;
-
-&lt;script src="https://cdn.jsdelivr.net/gh/ShazMoghaddam/orbs@1.3.0/orb.min.js" defer&gt;&lt;/script&gt;</pre>
-      </div>
-      <div>
-        <p class="lead">Or drive it from JavaScript.</p>
-<pre>const orb = new Orb(canvas, {
-  shape: 'sphere',
-  shapes: 'sphere,wave,ticks',
-  cycle: 4000
-});
-orb.morph('helix');
-orb.next();</pre>
-      </div>
+    <!-- Each example is a real orb. Selecting one loads its settings into the Studio. -->
+    <div class="showcase" aria-label="Presets">
+      <button type="button" class="show" data-preset="waveform">
+        <span class="show__tile"><canvas aria-hidden="true"></canvas></span>
+        <span class="show__label"><b>Waveform</b><span>Lines, glow, reflection</span><span class="sr-only"> (open in the Studio)</span></span>
+      </button>
+      <button type="button" class="show" data-preset="assistant">
+        <span class="show__tile"><canvas aria-hidden="true"></canvas></span>
+        <span class="show__label"><b>AI assistant</b><span>Listens, thinks, speaks</span><span class="sr-only"> (open in the Studio)</span></span>
+      </button>
+      <button type="button" class="show" data-preset="globe">
+        <span class="show__tile"><canvas aria-hidden="true"></canvas></span>
+        <span class="show__label"><b>Hero globe</b><span>A sliced sphere</span><span class="sr-only"> (open in the Studio)</span></span>
+      </button>
+      <button type="button" class="show" data-preset="success">
+        <span class="show__tile"><canvas aria-hidden="true"></canvas></span>
+        <span class="show__label"><b>Success</b><span>Status badge</span><span class="sr-only"> (open in the Studio)</span></span>
+      </button>
+      <button type="button" class="show" data-preset="network">
+        <span class="show__tile"><canvas aria-hidden="true"></canvas></span>
+        <span class="show__label"><b>Network</b><span>Constellation</span><span class="sr-only"> (open in the Studio)</span></span>
+      </button>
+      <button type="button" class="show" data-preset="loader">
+        <span class="show__tile"><canvas aria-hidden="true"></canvas></span>
+        <span class="show__label"><b>Loader</b><span>A pulse on a loop</span><span class="sr-only"> (open in the Studio)</span></span>
+      </button>
+      <button type="button" class="show" data-preset="galaxy">
+        <span class="show__tile"><canvas aria-hidden="true"></canvas></span>
+        <span class="show__label"><b>Galaxy</b><span>Spiral arms</span><span class="sr-only"> (open in the Studio)</span></span>
+      </button>
+      <button type="button" class="show" data-preset="energy">
+        <span class="show__tile"><canvas aria-hidden="true"></canvas></span>
+        <span class="show__label"><b>Energy</b><span>Spikes</span><span class="sr-only"> (open in the Studio)</span></span>
+      </button>
     </div>
   </section>
 
-  <section>
-    <h2>Ideas</h2>
-    <p class="lead">States for AI features, success and error badges, and a letter that comes alive.</p>
-    <div class="pills">
-      <div class="pill"><canvas data-orb="ticks" data-points="60" data-shapes="ticks" aria-hidden="true"></canvas>Thinking...</div>
-      <div class="pill"><canvas data-orb="ripple" data-points="90" data-shapes="ripple" aria-hidden="true"></canvas>Listening...</div>
-      <div class="pill"><canvas data-orb="bars" data-points="90" data-shapes="bars" aria-hidden="true"></canvas>Speaking...</div>
-      <div class="pill"><canvas data-orb="check" data-points="80" data-shapes="check" aria-hidden="true"></canvas>Done</div>
+  <section class="section studio" id="studio" aria-labelledby="studio-h">
+    <div class="studio__head">
+      <div>
+        <h2 id="studio-h">Studio</h2>
+        <p class="studio__sub">Make it yours, then copy the code.</p>
+      </div>
+      <button type="button" class="btn btn--quiet" data-surprise>Surprise me</button>
     </div>
-    <p class="letter" style="margin-top:2rem">Hell<span class="orb-o">o<canvas data-orb="sphere" data-points="140" data-hover="morph" data-shapes="sphere,torus,ticks" aria-hidden="true"></canvas></span> world</p>
-    <p class="lead">Hover the o. The real letter stays in the page, so search engines and screen readers still see it.</p>
+
+    <div class="studio__body">
+      <div class="canvas" data-canvas data-bg="dark">
+        <div class="canvas__stage" data-stage><canvas class="canvas__orb" data-studio-orb aria-hidden="true"></canvas></div>
+        <div class="canvas__foot">
+          <div class="canvas__bg">
+            <span class="canvas__bg-l" id="bg-l">Preview background</span>
+            <div class="seg seg--small" role="group" aria-labelledby="bg-l" data-backdrops title="Only changes the background behind the preview">
+              <button type="button" data-bg="dark" aria-pressed="true">Dark</button>
+              <button type="button" data-bg="light" aria-pressed="false">Light</button>
+            </div>
+          </div>
+          <span class="canvas__live"><i aria-hidden="true"></i><span data-live-label>Live preview</span></span>
+          <span class="canvas__size" data-size-label>320 px</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ptabs" role="tablist" aria-label="Settings">
+          <button type="button" role="tab" id="pt-shape" aria-controls="pp-shape" aria-selected="true" data-ptab="shape">Shape</button>
+          <button type="button" role="tab" id="pt-look" aria-controls="pp-look" aria-selected="false" tabindex="-1" data-ptab="look">Look</button>
+          <button type="button" role="tab" id="pt-motion" aria-controls="pp-motion" aria-selected="false" tabindex="-1" data-ptab="motion">Motion</button>
+          <button type="button" role="tab" id="pt-sound" aria-controls="pp-sound" aria-selected="false" tabindex="-1" data-ptab="sound">Sound</button>
+        </div>
+
+        <div class="panel__body" role="tabpanel" id="pp-shape" aria-labelledby="pt-shape" data-ppanel="shape">
+          <div class="shapes" role="radiogroup" aria-label="Shape" data-shape-picker></div>
+        </div>
+
+        <div class="panel__body" role="tabpanel" id="pp-look" aria-labelledby="pt-look" data-ppanel="look" hidden>
+          <div class="field">
+            <span class="field__l" id="style-l">Style</span>
+            <div class="seg" role="group" aria-labelledby="style-l" data-seg="style">
+              <button type="button" data-v="dots" aria-pressed="true">Dots</button>
+              <button type="button" data-v="lines" aria-pressed="false">Lines</button>
+            </div>
+          </div>
+          <div class="field">
+            <span class="field__l" id="color-l">Colour <output data-out="color">#FF7A45</output></span>
+            <div class="swatches" role="group" aria-labelledby="color-l" data-swatches>
+              <label class="swatch swatch--custom" title="Pick any colour"><input type="color" value="#FF7A45" data-input="color" aria-label="Custom colour"></label>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field__l" for="in-points">Points <output data-out="points">180</output></label>
+            <input type="range" id="in-points" min="40" max="480" step="10" value="180" data-input="points">
+          </div>
+          <div class="field">
+            <label class="field__l" for="in-dot">Dot size <output data-out="dot">1.2</output></label>
+            <input type="range" id="in-dot" min="0.6" max="3" step="0.1" value="1.2" data-input="dot">
+          </div>
+          <div class="field">
+            <label class="field__l" for="in-line">Line thickness <output data-out="line">Auto</output></label>
+            <input type="range" id="in-line" min="0" max="5" step="0.25" value="0" data-input="line">
+            <p class="hint">Slices in the lines style, and the connecting lines in shapes like constellation. 0 is automatic.</p>
+          </div>
+          <label class="toggle">Glow <input type="checkbox" data-input="glow-on"></label>
+          <div class="field" data-when="glow-on" hidden>
+            <label class="field__l" for="in-glow">Glow size <output data-out="glow">8 px</output></label>
+            <input type="range" id="in-glow" min="2" max="24" step="1" value="8" data-input="glow">
+          </div>
+          <label class="toggle">Reflection <input type="checkbox" data-input="reflect-on"></label>
+          <div class="field" data-when="reflect-on" hidden>
+            <label class="field__l" for="in-reflect">Reflection strength <output data-out="reflect">0.35</output></label>
+            <input type="range" id="in-reflect" min="0.1" max="0.8" step="0.05" value="0.35" data-input="reflect">
+          </div>
+        </div>
+
+        <div class="panel__body" role="tabpanel" id="pp-motion" aria-labelledby="pt-motion" data-ppanel="motion" hidden>
+          <div class="field">
+            <label class="field__l" for="in-size">Size <output data-out="size">320 px</output></label>
+            <input type="range" id="in-size" min="48" max="560" step="8" value="320" data-input="size">
+          </div>
+          <div class="field">
+            <label class="field__l" for="in-speed">Spin speed <output data-out="speed">0.35</output></label>
+            <input type="range" id="in-speed" min="0" max="1.5" step="0.05" value="0.35" data-input="speed">
+          </div>
+          <div class="field">
+            <label class="field__l" for="in-tilt">Tilt <output data-out="tilt">0°</output></label>
+            <input type="range" id="in-tilt" min="-60" max="60" step="5" value="0" data-input="tilt">
+          </div>
+          <label class="toggle">Cycle through shapes <input type="checkbox" data-input="cycle-on"></label>
+          <div class="field" data-when="cycle-on" hidden>
+            <label class="field__l" for="in-cycle">Every <output data-out="cycle">4 s</output></label>
+            <input type="range" id="in-cycle" min="2" max="12" step="0.5" value="4" data-input="cycle">
+            <p class="hint">Goes through every shape except the check and cross badges.</p>
+          </div>
+        </div>
+
+        <div class="panel__body" role="tabpanel" id="pp-sound" aria-labelledby="pt-sound" data-ppanel="sound" hidden>
+          <p class="hint hint--lead">Let the orb move with sound. Bars follow the actual frequencies; other shapes pulse and push out on the beat.</p>
+          <div class="soundbtns">
+            <button type="button" class="btn" data-sound="beat" aria-pressed="false">Play demo beat</button>
+            <button type="button" class="btn" data-sound="mic" aria-pressed="false">Use microphone</button>
+          </div>
+          <div class="field">
+            <label class="field__l" for="in-amount">Reaction strength <output data-out="audioAmount">1</output></label>
+            <input type="range" id="in-amount" min="0.3" max="2" step="0.1" value="1" data-input="audioAmount">
+          </div>
+          <p class="hint">The microphone is analysed in your browser only. Nothing is recorded or sent anywhere. In your own page, link an orb to a player with <code>data-audio="#player"</code>; it's added to your code when sound is on.</p>
+        </div>
+
+        <div class="panel__foot">
+          <button type="button" class="btn" data-reset>Reset</button>
+          <button type="button" class="btn" data-share>Share</button>
+          <button type="button" class="btn btn--solid" data-copy="snippet">Copy code</button>
+        </div>
+      </div>
+    </div>
+    <p class="studio__note" data-note role="status" aria-live="polite"></p>
   </section>
 
-  <footer>
-    MIT licensed. Made by <a href="https://shazmoghaddam.github.io/">Shaz Moghaddam</a> in London.
-  </footer>
-</div>
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <section class="section install" id="install" aria-labelledby="install-h">
+    <div class="section__head">
+      <h2 id="install-h">Get the code</h2>
+      <p>One file, about 9.5 KB gzipped, no dependencies. It follows every change you make in the Studio.</p>
+    </div>
+    <div class="ways">
+      <div class="way">
+        <div class="way__head"><span class="way__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8.5 7 3.5 12l5 5M15.5 7l5 5-5 5"/></svg></span><div><h3 class="way__t">HTML</h3><p class="way__s">Load the script once, then add a canvas wherever you want an orb.</p></div></div>
+        <pre class="code" tabindex="0" aria-label="HTML code"><code data-snippet></code></pre>
+        <div class="way__actions"><button type="button" class="btn btn--solid" data-copy="snippet">Copy code</button></div>
+      </div>
+      <div class="way">
+        <div class="way__head"><span class="way__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h13"/></svg></span><div><h3 class="way__t">JavaScript</h3><p class="way__s">Morph between states, change settings live, or react to sound.</p></div></div>
+        <pre class="code" tabindex="0" aria-label="JavaScript code"><code data-code="js"></code></pre>
+        <div class="way__actions"><button type="button" class="btn btn--solid" data-copy="js">Copy code</button><a class="btn" href="https://github.com/ShazMoghaddam/orbs#javascript-api">Full API</a></div>
+      </div>
+    </div>
+    <p class="install__note" data-copy-note role="status" aria-live="polite"></p>
+  </section>
+</main>
 
-<script src="orb.js"></script>
-<script>
-(function () {
-  var INFO = {
-    sphere: 'The classic, evenly spread',
-    wave: 'Liquid surface, crests glow',
-    spikes: 'Spines that ripple like audio',
-    constellation: 'Twinkling network graph',
-    torus: 'Donut with a rolling surface',
-    helix: 'Double helix with rungs',
-    galaxy: 'Three swaying spiral arms',
-    ticks: 'Loader ring with a chasing pulse',
-    cube: 'Wireframe built from dots',
-    clusters: 'k-means clusters, breathing',
-    ripple: 'Listening, rings spreading out',
-    bars: 'Speaking, columns rising and falling',
-    atom: 'Nucleus with three orbits',
-    infinity: 'Loader, a pulse on a loop',
-    check: 'Success badge',
-    cross: 'Error badge'
-  };
-  var names = Object.keys(Orb.shapes);
+<footer class="foot">
+  <!-- One layer of content. site.js copies it once more for the orange half; each copy is clipped to its own triangle. -->
+  <div class="foot__layer">
+    <div class="foot__in">
+      <div class="foot__about">
+        <a class="mark" href="#top" aria-label="Orbs, back to the top"><canvas class="mark__orb" data-foot-orb aria-hidden="true"></canvas>Orbs</a>
+        <p class="foot__eyebrow">Open-source canvas animations · v1.4</p>
+        <p class="foot__lede">Sixteen dot formations that morph into one another, from loaders and AI states to success and error badges. Draw them as dots or glowing lines, let them move with sound, then drop one line of HTML into any site.</p>
+      </div>
 
-  // Gallery: each card shows one shape and its snippet.
-  var grid = document.getElementById('grid');
-  names.forEach(function (name) {
-    var card = document.createElement('div');
-    card.className = 'card';
-    var snippet = '<canvas data-orb="' + name + '"></canvas>';
-    card.innerHTML = '<canvas aria-hidden="true"></canvas><strong>' + name + '</strong><span>' + (INFO[name] || '') + '</span>';
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.textContent = 'data-orb="' + name + '"';
-    btn.setAttribute('aria-label', 'Copy snippet for ' + name); btn.title = snippet;
-    btn.addEventListener('click', function () { copy(snippet); });
-    card.appendChild(btn);
-    grid.appendChild(card);
-    var cv = card.querySelector('canvas'); cv._orb = new Orb(cv, { shape: name, shapes: name });
-  });
+      <dl class="foot__specs">
+        <div><dt>Dependencies</dt><dd>0</dd></div>
+        <div><dt>Gzipped</dt><dd>9.5 kB</dd></div>
+        <div><dt>Shapes</dt><dd>16</dd></div>
+      </dl>
 
-  // Stage: one big orb you can steer.
-  var stage = new Orb(document.getElementById('stage'), { shape: 'sphere', cycle: 5000 });
-  var picker = document.getElementById('picker'), buttons = {};
-  names.forEach(function (name) {
-    var b = document.createElement('button');
-    b.type = 'button'; b.textContent = name;
-    b.addEventListener('click', function () { stage.cycle = 0; stage.morph(name); mark(); });
-    picker.appendChild(b); buttons[name] = b;
-  });
-  function mark() { names.forEach(function (n) { buttons[n].setAttribute('aria-pressed', String(n === stage.shape)); }); }
-  mark();
-  setInterval(mark, 500);   // keeps the highlight in step while it auto-cycles
+      <nav class="foot__links" aria-label="Footer">
+        <h2 class="foot__h">Project</h2>
+        <ul>
+          <li><a href="#studio">Studio</a></li>
+          <li><a href="#install">Get the code</a></li>
+          <li><a href="https://github.com/ShazMoghaddam/orbs">GitHub</a></li>
+          <li><a href="https://github.com/ShazMoghaddam/orbs#readme">Documentation</a></li>
+        </ul>
+      </nav>
 
-  // Theme
-  var themeBtn = document.getElementById('theme');
-  themeBtn.addEventListener('click', function () {
-    var light = document.body.dataset.theme !== 'light';
-    document.body.dataset.theme = light ? 'light' : 'dark';
-    themeBtn.textContent = light ? 'Dark theme' : 'Light theme';
-  });
+      <div class="foot__links">
+        <h2 class="foot__h">Credits</h2>
+        <ul>
+          <li>Fonts: <a href="https://fonts.google.com/specimen/Geist">Geist</a> and <a href="https://fonts.google.com/specimen/Fraunces">Fraunces</a> (OFL)</li>
+          <li>Hosted on <a href="https://www.jsdelivr.com">jsDelivr</a></li>
+          <li><a href="https://github.com/ShazMoghaddam/orbs/blob/main/LICENSE">MIT licence</a></li>
+        </ul>
+      </div>
+    </div>
 
-  // Copy
-  var toast = document.getElementById('toast'), timer;
-  function copy(text) {
-    var done = function () { toast.textContent = 'Copied'; toast.classList.add('show'); clearTimeout(timer); timer = setTimeout(function () { toast.classList.remove('show'); }, 1400); };
-    if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, function () { toast.textContent = 'Copy failed. Select the text instead.'; toast.classList.add('show'); });
-    else done();
-  }
-})();
-</script>
+    <div class="foot__bar">
+      <div class="foot__bar-in">
+        <p>Designed by <a href="https://shazmoghaddam.github.io">Shaz Moghaddam</a>, London</p>
+        <p class="foot__copy">© 2026 · Free to use under the MIT licence</p>
+      </div>
+    </div>
+  </div>
+</footer>
+<!--SITE-BODY-END-->
 </body>
 </html>

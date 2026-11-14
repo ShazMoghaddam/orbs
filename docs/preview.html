@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Orbs README preview</title>
+<!-- Renders docs/preview.webp, the animated preview in the README: python3 scripts/preview.py
+     The eight presets from the site's showcase, each a real orb. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&display=swap">
+<style>
+  html, body { margin: 0; width: 960px; height: 500px; overflow: hidden; background: #0E0F0B; }
+  body { font-family: "Geist", "Geist Variable", sans-serif; color: #F2EDE4; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 16px; padding: 20px; box-sizing: border-box; }
+  figure { margin: 0; display: grid; grid-template-rows: 1fr auto; gap: 8px; min-height: 0; }
+  .tile { border-radius: 18px; border: 1px solid #24251F; background: radial-gradient(90% 90% at 50% 35%, #1B1C16 0%, #131410 75%); min-height: 0; }
+  canvas { width: 100%; height: 100%; display: block; }
+  figcaption { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; padding: 0 4px; }
+  figcaption b { font-weight: 600; }
+  figcaption span { font: 500 11px "Geist Mono", "Geist Mono Variable", monospace; color: #908A7F; }
+</style>
+<figure><div class="tile"><canvas style="color:#6FD8F2" data-orb="bars" data-shapes="bars" data-style="lines" data-glow data-reflect></canvas></div><figcaption><b>Waveform</b><span>lines</span></figcaption></figure>
+<figure><div class="tile"><canvas style="color:#B9A2FF" data-orb="ripple" data-shapes="ripple,ticks,bars" data-cycle="2000" data-glow="6"></canvas></div><figcaption><b>AI assistant</b><span>cycles</span></figcaption></figure>
+<figure><div class="tile"><canvas style="color:#FF7A45" data-orb="sphere" data-shapes="sphere" data-style="lines" data-points="360" data-glow="10"></canvas></div><figcaption><b>Hero globe</b><span>lines</span></figcaption></figure>
+<figure><div class="tile"><canvas style="color:#3ECF8E" data-orb="check" data-shapes="check" data-glow="6"></canvas></div><figcaption><b>Success</b><span>badge</span></figcaption></figure>
+<figure><div class="tile"><canvas style="color:#EADCC6" data-orb="constellation" data-shapes="constellation" data-glow="4" data-dot="1.6"></canvas></div><figcaption><b>Network</b><span>dots</span></figcaption></figure>
+<figure><div class="tile"><canvas style="color:#FF7A45" data-orb="infinity" data-shapes="infinity" data-glow="6"></canvas></div><figcaption><b>Loader</b><span>dots</span></figcaption></figure>
+<figure><div class="tile"><canvas style="color:#FF8FB1" data-orb="galaxy" data-shapes="galaxy" data-glow="6"></canvas></div><figcaption><b>Galaxy</b><span>dots</span></figcaption></figure>
+<figure><div class="tile"><canvas style="color:#FFD166" data-orb="spikes" data-shapes="spikes" data-glow="4" data-speed="0.6"></canvas></div><figcaption><b>Energy</b><span>dots</span></figcaption></figure>
+<script src="../orb.js"></script>
+</html>

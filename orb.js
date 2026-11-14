@@ -1,5 +1,5 @@
 /*!
- * Orbs v1.3.0 · dot-formation animations on <canvas>. Zero dependencies. MIT.
+ * Orbs v1.4.0 · dot-formation animations on <canvas>. Zero dependencies. MIT.
  * https://github.com/ShazMoghaddam/orbs · Shaz Moghaddam
  *
  * Usage:
@@ -25,10 +25,14 @@
  *   data-reflect      faded mirror image underneath; a number sets its opacity (default 0.35)
  *   data-audio        CSS selector of an <audio> or <video> to react to once it plays
  *   data-audio-amount how strongly it reacts                 (default 1)
+ *   data-tilt         extra tilt in degrees, -90 to 90            (default 0)
  *
  * Colour comes from the canvas's CSS `color` and fades on theme change.
  * JS:  var o = new Orb(canvas, {...}); o.morph('torus'); o.next(); o.destroy();
  *      o.listen(audioEl | mediaStream | audioNode | 'mic'); o.unlisten();
+ *      o.set({ style: 'lines', glow: 10, speed: 0.6 });   change settings while it runs
+ *      canvas.addEventListener('orb:morph', e => e.detail.shape);   fires on every morph
+ *      Orb.init(root);   start any <canvas data-orb> added after the page loaded
  *      Orb.define('myshape', { build: function (n) { return { pts: [...] }; } });
  */
 (function (global) {
@@ -437,6 +441,7 @@
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.style = (opts.style || ds.style) === 'lines' ? 'lines' : 'dots';
+    this.autoPoints = !(opts.points || ds.points);
     this.n = +(opts.points || ds.points || (this.style === 'lines' ? 320 : 180));
     this.line = +(opts.line || ds.line || 0);
     this.glow = amount(opts.glow != null ? opts.glow : ds.glow, 8);
@@ -444,6 +449,7 @@
     this.audioAmount = +(opts.audioAmount != null ? opts.audioAmount : (ds.audioAmount || 1));
     this.audio = null;
     this.speed = +(opts.speed != null ? opts.speed : (ds.speed || 0.35));
+    this.tiltAdd = (+(opts.tilt != null ? opts.tilt : (ds.tilt || 0)) || 0) * Math.PI / 180;
     this.dot = +(opts.dot || ds.dot || 1.2);
     this.cycle = +(opts.cycle || ds.cycle || 0);
     this.order = (opts.shapes || ds.shapes || Object.keys(SHAPES).filter(function (s) { return SHAPES[s].inCycle !== false; }).join(','))
@@ -566,11 +572,52 @@
       var t = this.data(name).pts;
       this.cur = t.map(function (p) { return p.slice(); });
       this.src = name; this.g = 1; this.morphStart = 0;
-      this.tilt = SHAPES[name].tilt != null ? SHAPES[name].tilt : 0.38;
+      this.tilt = (SHAPES[name].tilt != null ? SHAPES[name].tilt : 0.38) + this.tiltAdd;
       if (SHAPES[name].face) this.angle = Math.round(this.angle / TAU) * TAU;
       this.draw();
     }
     this.wake();
+    if (!o.intro && global.CustomEvent) this.canvas.dispatchEvent(new CustomEvent('orb:morph', { detail: { shape: name } }));
+    return this;
+  };
+
+  // Change settings on a running orb. Changing the number of points (or the style, when no
+  // point count was given) rebuilds the shape in place, without the intro.
+  Orb.prototype.set = function (o) {
+    o = o || {};
+    var rebuild = false;
+    if (o.style != null) {
+      var st = o.style === 'lines' ? 'lines' : 'dots';
+      if (st !== this.style && o.points == null && this.autoPoints) { o.points = st === 'lines' ? 320 : 180; }
+      this.style = st;
+    }
+    if (o.points != null && +o.points !== this.n) { this.n = Math.max(8, +o.points | 0); this.autoPoints = false; rebuild = true; }
+    if (o.speed != null) this.speed = +o.speed;
+    if (o.dot != null) this.dot = +o.dot;
+    if (o.line != null) this.line = +o.line;
+    if (o.glow != null) this.glow = amount(o.glow, 8);
+    if (o.reflect != null) this.reflect = Math.min(1, amount(o.reflect, 0.35));
+    if (o.tilt != null) this.tiltAdd = (+o.tilt || 0) * Math.PI / 180;
+    if (o.audioAmount != null) this.audioAmount = +o.audioAmount;
+    if (o.cycle != null) { this.cycle = +o.cycle; this.lastCycle = 0; }
+    if (o.shapes != null) {
+      var list = (Array.isArray(o.shapes) ? o.shapes : String(o.shapes).split(',')).map(function (x) { return String(x).trim(); }).filter(function (x) { return SHAPES[x]; });
+      if (list.length) { this.order = list; if (list.indexOf(this.shape) < 0) this.order.unshift(this.shape); }
+    }
+    if (o.glow != null || o.reflect != null) { this.fx = null; this.floor = null; }
+    if (rebuild) {
+      this.cache = {};
+      this.X = new Float32Array(this.n); this.Y = new Float32Array(this.n); this.F = new Float32Array(this.n);
+      this.cur = this.data(this.shape).pts.map(function (p) { return p.slice(); });
+      this.from = this.cur; this.src = this.shape; this.g = 1; this.morphStart = 0;
+    }
+    if (o.shape != null && o.shape !== this.shape) this.morph(o.shape);
+    if (reduceMQ.matches) {
+      var def = SHAPES[this.shape];
+      this.tilt = (def.tilt != null ? def.tilt : 0.38) + this.tiltAdd;
+    }
+    this.refreshColor();
+    this.draw();
     return this;
   };
 
@@ -648,7 +695,7 @@
     var dt = Math.min(0.05, (now - this.last) / 1000); this.last = now;
     if (this.audio) this.sampleAudio();
     var def = SHAPES[this.shape];
-    var tiltGoal = def.tilt != null ? def.tilt : 0.38, spinGoal = def.spin != null ? def.spin : 1;
+    var tiltGoal = (def.tilt != null ? def.tilt : 0.38) + this.tiltAdd, spinGoal = def.spin != null ? def.spin : 1;
     var ease = Math.min(1, dt * 2.5);
     this.tilt += (tiltGoal - this.tilt) * ease;
     this.spinMul += (spinGoal - this.spinMul) * ease;
@@ -878,15 +925,16 @@
   };
 
   /* ── Auto-init every <canvas data-orb> ── */
-  function init() {
-    var els = document.querySelectorAll('canvas[data-orb]');
+  function init(root) {
+    var els = (root && root.querySelectorAll ? root : document).querySelectorAll('canvas[data-orb]');
     for (var i = 0; i < els.length; i++) {
       if (els[i]._orb) continue;
       els[i]._orb = new Orb(els[i]);
       if (els[i].parentElement) els[i].parentElement.classList.add('orb-ready');  // hide fallback glyph only once running
     }
   }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  Orb.init = init;
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { init(); });
   else init();
 
   global.Orb = Orb;

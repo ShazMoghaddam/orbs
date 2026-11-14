@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.4.0 (2026-11-14)
+
+- New Studio on the demo site: pick a shape, style, colour, points, dot size, line thickness, glow, reflection, size, speed, tilt and cycling, try it with sound, then copy the HTML or JavaScript. Includes eight presets, a share link and Surprise me.
+- New site design to match Bezel: Geist and Fraunces fonts and an orange and sand footer, signed "Designed by Shaz Moghaddam".
+- New `orb.set({...})`: change any setting on a running orb without restarting it.
+- New `data-tilt` (degrees), added to each shape's own tilt.
+- New `orb:morph` event on the canvas after every morph, with the shape in `e.detail.shape`.
+- New `Orb.init(root)` to start canvases added after the page loaded, for React, Vue and similar.
+- New animated README preview (`docs/preview.webp`, 0.8 MB), replacing the 4.8 MB GIF of the old ten shapes.
+- About 9.5 KB gzipped (up from 9 KB).
+
 ## 1.3.0 (2026-11-14)
 
 - Orbs can now react to sound. `orb.listen()` takes an `<audio>` or `<video>`, a MediaStream, any Web Audio node, or `'mic'`; `orb.unlisten()` stops.
