@@ -23,9 +23,9 @@
 
 <script src="../orb.js"></script>
 <script>
-  // One orb, three states: morph between them instead of swapping spinners.
-  const orb = new Orb(document.getElementById('orb'), { shape: 'wave', points: 90, speed: 0.8 });
-  const states = [['wave', 'Listening...'], ['ticks', 'Thinking...'], ['spikes', 'Speaking...']];
+  // One orb, five states: morph between them instead of swapping spinners.
+  const orb = new Orb(document.getElementById('orb'), { shape: 'ripple', points: 90 });
+  const states = [['ripple', 'Listening...'], ['ticks', 'Thinking...'], ['bars', 'Speaking...'], ['check', 'Done'], ['cross', 'Something went wrong']];
   let i = 0;
   document.getElementById('step').addEventListener('click', () => {
     i = (i + 1) % states.length;

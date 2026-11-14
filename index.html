@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Orbs · dot-formation animations for the web</title>
-<meta name="description" content="Ten morphing dot-formation animations on canvas. One file, about 5 KB gzipped, no dependencies.">
+<meta name="description" content="Sixteen morphing dot-formation animations on canvas. One file, about 6.5 KB gzipped, no dependencies.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital@0;1&family=DM+Sans:wght@400;500&family=DM+Mono&display=swap" rel="stylesheet">
 <style>
@@ -32,7 +32,7 @@ h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:2rem; marg
 section { padding:3rem 0; border-top:1px solid var(--line); }
 .lead { color:var(--muted); margin-bottom:1.6rem; }
 
-.grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); }
+.grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); }
 .card { background:var(--bg); padding:1rem 1rem 1.1rem; transition:background .6s; display:flex; flex-direction:column; }
 .card canvas { width:100%; aspect-ratio:1; display:block; }
 .card strong { font-weight:500; }
@@ -69,7 +69,7 @@ footer { padding:2.5rem 0 3rem; border-top:1px solid var(--line); color:var(--mu
   <div class="hero">
     <div>
       <h1>Orbs, <em>in dots.</em></h1>
-      <p>Ten morphing dot formations for loaders, AI states and hero moments. One file, about 5 KB gzipped, no dependencies.</p>
+      <p>Sixteen morphing dot formations for loaders, AI states, status badges and hero moments. One file, about 6.5 KB gzipped, no dependencies.</p>
       <div class="picker" id="picker" role="group" aria-label="Choose a shape"></div>
     </div>
     <canvas class="stage" id="stage" data-points="260" data-dot="1.6" aria-hidden="true"></canvas>
@@ -90,7 +90,7 @@ footer { padding:2.5rem 0 3rem; border-top:1px solid var(--line); color:var(--mu
         style="width:200px;height:200px;color:#FF4400"
         aria-hidden="true"&gt;&lt;/canvas&gt;
 
-&lt;script src="https://cdn.jsdelivr.net/gh/ShazMoghaddam/orbs@1.0.3/orb.min.js" defer&gt;&lt;/script&gt;</pre>
+&lt;script src="https://cdn.jsdelivr.net/gh/ShazMoghaddam/orbs@1.1.0/orb.min.js" defer&gt;&lt;/script&gt;</pre>
       </div>
       <div>
         <p class="lead">Or drive it from JavaScript.</p>
@@ -107,11 +107,12 @@ orb.next();</pre>
 
   <section>
     <h2>Ideas</h2>
-    <p class="lead">Loading states for AI features, and a letter that comes alive.</p>
+    <p class="lead">States for AI features, success and error badges, and a letter that comes alive.</p>
     <div class="pills">
       <div class="pill"><canvas data-orb="ticks" data-points="60" data-shapes="ticks" aria-hidden="true"></canvas>Thinking...</div>
-      <div class="pill"><canvas data-orb="wave" data-points="90" data-speed="0.8" data-shapes="wave" aria-hidden="true"></canvas>Listening...</div>
-      <div class="pill"><canvas data-orb="spikes" data-points="90" data-speed="0.6" data-shapes="spikes" aria-hidden="true"></canvas>Speaking...</div>
+      <div class="pill"><canvas data-orb="ripple" data-points="90" data-shapes="ripple" aria-hidden="true"></canvas>Listening...</div>
+      <div class="pill"><canvas data-orb="bars" data-points="90" data-shapes="bars" aria-hidden="true"></canvas>Speaking...</div>
+      <div class="pill"><canvas data-orb="check" data-points="80" data-shapes="check" aria-hidden="true"></canvas>Done</div>
     </div>
     <p class="letter" style="margin-top:2rem">Hell<span class="orb-o">o<canvas data-orb="sphere" data-points="140" data-hover="morph" data-shapes="sphere,torus,ticks" aria-hidden="true"></canvas></span> world</p>
     <p class="lead">Hover the o. The real letter stays in the page, so search engines and screen readers still see it.</p>
@@ -136,7 +137,13 @@ orb.next();</pre>
     galaxy: 'Three swaying spiral arms',
     ticks: 'Loader ring with a chasing pulse',
     cube: 'Wireframe built from dots',
-    clusters: 'k-means clusters, breathing'
+    clusters: 'k-means clusters, breathing',
+    ripple: 'Listening, rings spreading out',
+    bars: 'Speaking, columns rising and falling',
+    atom: 'Nucleus with three orbits',
+    infinity: 'Loader, a pulse on a loop',
+    check: 'Success badge',
+    cross: 'Error badge'
   };
   var names = Object.keys(Orb.shapes);
 

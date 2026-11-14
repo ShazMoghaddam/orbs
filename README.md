@@ -1,14 +1,14 @@
 # Orbs
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-![Size](https://img.shields.io/badge/gzipped-~5KB-brightgreen)
+![Size](https://img.shields.io/badge/gzipped-~6.5KB-brightgreen)
 ![Dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
 [![jsDelivr](https://data.jsdelivr.com/v1/package/gh/ShazMoghaddam/orbs/badge)](https://www.jsdelivr.com/package/gh/ShazMoghaddam/orbs)
 [![GitHub stars](https://img.shields.io/github/stars/ShazMoghaddam/orbs?style=social)](https://github.com/ShazMoghaddam/orbs)
 
-Ten morphing dot-formation animations for the web. Use them for loaders, AI "thinking" states, or one memorable moment in a hero.
+Sixteen morphing dot-formation animations for the web. Use them for loaders, AI "listening", "thinking" and "speaking" states, success and error badges, or one memorable moment in a hero.
 
-One file, about 5 KB gzipped, no dependencies, no build step.
+One file, about 6.5 KB gzipped, no dependencies, no build step.
 
 **[Live demo](https://shazmoghaddam.github.io/orbs)** · See it in a real page in the Contact section of [shazmoghaddam.github.io](https://shazmoghaddam.github.io)
 
@@ -21,7 +21,7 @@ Add a canvas, size it with CSS, then load the script.
 ```html
 <canvas data-orb="torus" style="width:200px; height:200px; color:#FF4400" aria-hidden="true"></canvas>
 
-<script src="https://cdn.jsdelivr.net/gh/ShazMoghaddam/orbs@1.0.3/orb.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/gh/ShazMoghaddam/orbs@1.1.0/orb.min.js" defer></script>
 ```
 
 Every `<canvas data-orb>` on the page starts automatically. The dots use the canvas's CSS `color`, so you theme an orb the same way you theme text.
@@ -42,8 +42,16 @@ You can also download `orb.min.js` and host it yourself.
 | `ticks` | A dashed loader ring with a pulse chasing round it |
 | `cube` | A wireframe cube built from dots |
 | `clusters` | Four k-means style clusters breathing, linked to their centroids |
+| `ripple` | Rings spreading out from the centre and fading, for listening |
+| `bars` | Columns of dots rising and falling, for speaking |
+| `atom` | A small nucleus with three orbits, each carrying a bright electron |
+| `infinity` | A figure of eight with a bright pulse running round it |
+| `check` | A success badge: a dotted ring with a tick inside |
+| `cross` | An error badge: the same ring with an X inside |
 
 Any shape can morph into any other. Dots leave in a top-to-bottom cascade, and lines and dashes fade in and out with the morph.
+
+`check` and `cross` are status badges, so they are left out of the default cycle. Morph to them yourself, or list them in `data-shapes`. Flat shapes (`bars`, `infinity`, `check` and `cross`) turn to face the viewer instead of spinning, so they always read clearly. `atom` is busy at loader size, so use it at about 120 px or larger.
 
 ## Options
 
@@ -52,7 +60,7 @@ Set options as `data-` attributes, or pass them to the constructor.
 | Attribute | JS option | Default | What it does |
 | --- | --- | --- | --- |
 | `data-orb` | `shape` | `sphere` | Starting shape |
-| `data-shapes` | `shapes` | all | Comma list of shapes to cycle through |
+| `data-shapes` | `shapes` | all except `check` and `cross` | Comma list of shapes to cycle through |
 | `data-points` | `points` | `180` | Number of dots. Use 60 to 100 for small loaders |
 | `data-dot` | `dot` | `1.2` | Dot radius in CSS pixels |
 | `data-speed` | `speed` | `0.35` | Rotation speed in radians per second |
@@ -76,9 +84,11 @@ Orb.shapes;           // every registered shape
 Morphing one orb between states reads better than swapping spinners. For example:
 
 ```js
-orb.morph('wave');    // listening
+orb.morph('ripple');  // listening
 orb.morph('ticks');   // thinking
-orb.morph('spikes');  // speaking
+orb.morph('bars');    // speaking
+orb.morph('check');   // done
+orb.morph('cross');   // something went wrong
 ```
 
 See [`examples/loader.html`](examples/loader.html).
@@ -99,6 +109,8 @@ Orb.define('ring2', {
   },
   tilt: 1.2,                       // camera tilt in radians
   spin: 0.5,                       // rotation multiplier
+  face: false,                     // true turns the orb to face the viewer instead of spinning
+  inCycle: true,                   // false leaves the shape out of the default cycle
   size: 1,                         // dot size multiplier, number or function(i, data, t, p)
   alpha: 1,                        // opacity multiplier, number or function(i, data, t, p)
   dash: (i, data, t, p) => 0,      // above 0, draws a radial stroke of that length instead of a dot
