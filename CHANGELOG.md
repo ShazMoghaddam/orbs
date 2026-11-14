@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.3.0 (2026-11-14)
+
+- Orbs can now react to sound. `orb.listen()` takes an `<audio>` or `<video>`, a MediaStream, any Web Audio node, or `'mic'`; `orb.unlisten()` stops.
+- New `data-audio="#player"`: react to a media element on the page once it plays, with no JavaScript.
+- New `data-audio-amount`: how strongly an orb reacts.
+- `bars` follows the actual frequencies, bass in the middle. Other shapes pulse with the volume and push out on the beat; flat marks only pulse.
+- `orb.audio.level` and `orb.audio.bands` (16 values from bass to treble), plus `Orb.audioContext()`.
+- New shape hook `audio(i, data, A, p, out)` for custom shapes.
+- The microphone is analysed in the browser only, never played back, recorded or sent.
+- Reduced motion turns sound reactions off.
+- New example: `examples/audio.html`, with a demo beat made in the browser, a microphone button and a file picker.
+- About 9 KB gzipped (up from 8 KB).
+
 ## 1.2.0 (2026-11-14)
 
 - New lines style: `data-style="lines"` draws any shape as glowing vertical slices instead of dots. Solid shapes become sliced silhouettes, `bars` becomes a waveform, and rings, holes and marks keep their gaps.

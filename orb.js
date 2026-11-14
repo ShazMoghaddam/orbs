@@ -1,5 +1,5 @@
 /*!
- * Orbs v1.2.0 · dot-formation animations on <canvas>. Zero dependencies. MIT.
+ * Orbs v1.3.0 · dot-formation animations on <canvas>. Zero dependencies. MIT.
  * https://github.com/ShazMoghaddam/orbs · Shaz Moghaddam
  *
  * Usage:
@@ -23,9 +23,12 @@
  *   data-line         line thickness in CSS px, for slices and connecting lines
  *   data-glow         soft glow behind the shape; a number sets its size in px (default 8)
  *   data-reflect      faded mirror image underneath; a number sets its opacity (default 0.35)
+ *   data-audio        CSS selector of an <audio> or <video> to react to once it plays
+ *   data-audio-amount how strongly it reacts                 (default 1)
  *
  * Colour comes from the canvas's CSS `color` and fades on theme change.
  * JS:  var o = new Orb(canvas, {...}); o.morph('torus'); o.next(); o.destroy();
+ *      o.listen(audioEl | mediaStream | audioNode | 'mic'); o.unlisten();
  *      Orb.define('myshape', { build: function (n) { return { pts: [...] }; } });
  */
 (function (global) {
@@ -77,6 +80,7 @@
    *   edgeAlpha         opacity of the lines listed in edges
    *   face              turn to face the viewer instead of spinning (for flat marks)
    *   inCycle           false keeps the shape out of the default cycle
+   *   audio(i,d,A,p,o)  react to sound: write a moved copy of p into o. A has bands[16] and level, 0..1
    *   lineGap           in the lines style, the widest gap (in radii) still joined into one line (default 0.45)
    */
   var SHAPES = {};
@@ -310,6 +314,11 @@
       var b = d.bar[i], v = 0.5 + 0.5 * Math.sin(t * 3.3 + b * 1.9) * Math.sin(t * 1.4 + b * 0.7);
       var h = 0.1 + 0.7 * v * (1 - Math.abs(b - d.mid) / (d.mid + 2));
       o[0] = p[0]; o[1] = d.fy[i] * h; o[2] = p[2];
+    },
+    audio: function (i, d, A, p, o) {             // low notes in the middle, high notes at the edges
+      var b = d.bar[i], k = Math.round(Math.abs(b - d.mid) / d.mid * 11);
+      var h = 0.06 + 0.86 * A.bands[k] * (1 - Math.abs(b - d.mid) / (d.mid * 4));
+      o[0] = p[0]; o[1] = d.fy[i] * h; o[2] = p[2];
     }
   });
 
@@ -413,6 +422,13 @@
   define('check', look(badge([[[-0.4, 0.03], [-0.12, 0.31], [0.42, -0.27]]])));
   define('cross', look(badge([[[-0.3, -0.3], [0.3, 0.3]], [[0.3, -0.3], [-0.3, 0.3]]])));
 
+  /* ── Sound ── */
+  var AC = null;
+  function audioContext() {                       // one shared context for every orb
+    if (!AC) { var C = global.AudioContext || global.webkitAudioContext; if (C) AC = new C(); }
+    return AC;
+  }
+
   /* ── Orb ── */
   function Orb(canvas, opts) {
     if (!(this instanceof Orb)) return new Orb(canvas, opts);
@@ -425,6 +441,8 @@
     this.line = +(opts.line || ds.line || 0);
     this.glow = amount(opts.glow != null ? opts.glow : ds.glow, 8);
     this.reflect = Math.min(1, amount(opts.reflect != null ? opts.reflect : ds.reflect, 0.35));
+    this.audioAmount = +(opts.audioAmount != null ? opts.audioAmount : (ds.audioAmount || 1));
+    this.audio = null;
     this.speed = +(opts.speed != null ? opts.speed : (ds.speed || 0.35));
     this.dot = +(opts.dot || ds.dot || 1.2);
     this.cycle = +(opts.cycle || ds.cycle || 0);
@@ -457,6 +475,7 @@
 
   Orb.define = define;
   Orb.shapes = SHAPES;
+  Orb.audioContext = audioContext;
 
   Orb.prototype.data = function (name) {
     return this.cache[name] || (this.cache[name] = SHAPES[name].build(this.n));
@@ -487,6 +506,17 @@
     if ((opts.click || ds.click) === 'morph') {
       this._click = function () { self.next(); };
       (this.canvas.parentElement || this.canvas).addEventListener('click', this._click);
+    }
+
+    var media = opts.audio || ds.audio;
+    if (media) {                                  // react to a media element once it plays (a play is a user gesture)
+      var el2 = typeof media === 'string' ? document.querySelector(media) : media;
+      if (el2) {
+        this._play = function () { if (!self.audio) self.listen(el2); };
+        el2.addEventListener('play', this._play);
+        this._media = el2;
+        if (!el2.paused) this._play();
+      }
     }
 
     var themeMorph = opts.themeMorph || ds.themeMorph !== undefined;
@@ -560,9 +590,63 @@
     requestAnimationFrame(this._frame);
   };
 
+  // Sound: pass an <audio> or <video>, a MediaStream, any Web Audio node, or 'mic'. Returns a promise.
+  // Media elements play through as normal; a microphone is analysed only, never played back.
+  Orb.prototype.listen = function (src) {
+    var self = this, ctx = audioContext();
+    this.unlisten();
+    if (!ctx) return Promise.reject(new Error('Web Audio is not supported'));
+    if (src === 'mic') {
+      if (!global.navigator || !navigator.mediaDevices) return Promise.reject(new Error('Microphone is not available'));
+      return navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+        return self.listen(stream).then(function () { self.audio.stream = stream; return self; });
+      });
+    }
+    var node;
+    if (global.MediaStream && src instanceof MediaStream) node = ctx.createMediaStreamSource(src);
+    else if (src && /^(AUDIO|VIDEO)$/.test(src.nodeName)) {
+      // An element can only be wired into Web Audio once, so the source is kept on the element.
+      if (!src._orbNode) { src._orbNode = ctx.createMediaElementSource(src); src._orbNode.connect(ctx.destination); }
+      node = src._orbNode;
+    } else if (src && src.connect) node = src;
+    else return Promise.reject(new Error('Unsupported audio source'));
+    if (ctx.state === 'suspended') ctx.resume();
+    var an = ctx.createAnalyser();
+    an.fftSize = 256; an.smoothingTimeConstant = 0.55;
+    node.connect(an);
+    this.audio = { node: node, an: an, bins: new Uint8Array(an.frequencyBinCount), bands: new Float32Array(16), level: 0 };
+    this.wake();
+    return Promise.resolve(this);
+  };
+
+  Orb.prototype.unlisten = function () {
+    var A = this.audio;
+    if (!A) return this;
+    try { A.node.disconnect(A.an); } catch (e) { /* already disconnected */ }
+    if (A.stream) A.stream.getTracks().forEach(function (tr) { tr.stop(); });
+    this.audio = null;
+    return this;
+  };
+
+  // 16 bands, spaced like hearing (more detail in the lows), with a quick rise and a slower fall.
+  Orb.prototype.sampleAudio = function () {
+    var A = this.audio, bins = A.bins, B = A.bands, sum = 0;
+    A.an.getByteFrequencyData(bins);
+    for (var k = 0; k < 16; k++) {
+      var lo = Math.floor(1 + Math.pow(k / 16, 2) * 90), hi = Math.max(lo + 1, Math.floor(1 + Math.pow((k + 1) / 16, 2) * 90));
+      var v = 0;
+      for (var j = lo; j < hi; j++) v += bins[j];
+      v = Math.min(1, Math.pow(v / (hi - lo) / 255, 1.3) * (1 + k * 0.06) * this.audioAmount);   // lift the quieter highs
+      B[k] += (v - B[k]) * (v > B[k] ? 0.6 : 0.15);
+      sum += B[k];
+    }
+    A.level += (sum / 16 - A.level) * 0.3;
+  };
+
   Orb.prototype.frame = function (now) {
     if (!this.visible || document.hidden || reduceMQ.matches) { this.running = false; return; }
     var dt = Math.min(0.05, (now - this.last) / 1000); this.last = now;
+    if (this.audio) this.sampleAudio();
     var def = SHAPES[this.shape];
     var tiltGoal = def.tilt != null ? def.tilt : 0.38, spinGoal = def.spin != null ? def.spin : 1;
     var ease = Math.min(1, dt * 2.5);
@@ -625,12 +709,32 @@
       pos[0] += (tmp[0] - base[0]) * weight; pos[1] += (tmp[1] - base[1]) * weight; pos[2] += (tmp[2] - base[2]) * weight;
     }
 
+    // Sound: shapes with their own audio() use it; flat marks only pulse; the rest also push out on the beat.
+    var A = this.audio && !reduceMQ.matches ? this.audio : null, amt = this.audioAmount;
+    var pulse = A ? 1 + A.level * 0.1 : 1;
+    function react(i, def, d, weight) {
+      if (def.audio) {
+        tmp[0] = pos[0]; tmp[1] = pos[1]; tmp[2] = pos[2];
+        def.audio(i, d, A, tmp, tmp);
+        pos[0] += (tmp[0] - pos[0]) * weight; pos[1] += (tmp[1] - pos[1]) * weight; pos[2] += (tmp[2] - pos[2]) * weight;
+        return;
+      }
+      var k = pulse;
+      if (!def.face) {
+        var u = Math.atan2(pos[2], pos[0]) / TAU + 0.5;          // low notes one side, high notes the other
+        k += A.bands[Math.min(15, Math.floor((1 - Math.abs(2 * u - 1)) * 16))] * 0.22 * Math.min(1, amt);
+      }
+      k = 1 + (k - 1) * weight;
+      pos[0] *= k; pos[1] *= k; pos[2] *= k;
+    }
+
     // 1. positions: base + each shape's live motion, weighted by how far the morph has got
     var proj = [0, 0, 0];
     for (var i = 0; i < n; i++) {
       var base = this.cur[i];
       pos[0] = base[0]; pos[1] = base[1]; pos[2] = base[2];
       blendDeform(T, td, g, i, base);
+      if (A) react(i, T, td, 1);
       project(pos, proj);
       X[i] = proj[0]; Y[i] = proj[1]; F[i] = proj[2];
       this.cur[i]._p = this.cur[i]._p || [0, 0, 0];
@@ -655,14 +759,14 @@
     edges(td, T, g);
 
     // 3. dots and dashes, back to front is not needed: alpha already fades the far side
-    var end = [0, 0, 0], low = -1e9;
+    var end = [0, 0, 0], low = -1e9, lift = A ? 0.8 + A.level * 0.6 : 1;
     for (i = 0; i < n; i++) {
       var p = this.cur[i]._p, front = F[i];
       var size = gs * val(S.size, i, sd, t, p) + g * val(T.size, i, td, t, p);
       var alpha = gs * val(S.alpha, i, sd, t, p) + g * val(T.alpha, i, td, t, p);
       var dash = (S.dash ? gs * S.dash(i, sd, t, p) : 0) + (T.dash ? g * T.dash(i, td, t, p) : 0);
       var r = dot * (0.45 + front * 0.85) * size;
-      var a2 = Math.max(0, Math.min(1, (0.12 + front * 0.88) * alpha));
+      var a2 = Math.max(0, Math.min(1, (0.12 + front * 0.88) * alpha * lift));
       if (dash > 0.004) {
         tmp[0] = p[0] * (1 + dash); tmp[1] = p[1] * (1 + dash); tmp[2] = p[2] * (1 + dash);
         project(tmp, end);
@@ -691,7 +795,7 @@
     for (var i = 0; i < n; i++) {
       var p = this.cur[i]._p;
       var alpha = gs * val(S.alpha, i, sd, t, p) + g * val(T.alpha, i, td, t, p);
-      var a = Math.max(0, Math.min(1, (0.2 + F[i] * 0.8) * alpha * 1.5));   // lines are thinner than dots, so lift them
+      var a = Math.max(0, Math.min(1, (0.2 + F[i] * 0.8) * alpha * 1.5 * (this.audio ? 0.8 + this.audio.level * 0.6 : 1)));   // lines are thinner than dots, so lift them
       if (a < 0.02) continue;
       if (a > 0.08 && Y[i] > low) low = Y[i];
       var fx = X[i] / sp, c0 = Math.floor(fx), fr = fx - c0;         // share each dot between its two nearest
@@ -760,6 +864,8 @@
 
   Orb.prototype.destroy = function () {
     this.visible = false;
+    this.unlisten();
+    if (this._play) this._media.removeEventListener('play', this._play);
     if (this.ro) this.ro.disconnect(); else global.removeEventListener('resize', this._resize);
     if (this.io) this.io.disconnect();
     if (this.mo) this.mo.disconnect();

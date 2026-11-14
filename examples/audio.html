@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orbs example: react to sound</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: radial-gradient(80% 70% at 50% 40%, #0B1A2E, #03060C 75%); color: #CFE6F2; display: grid; place-items: center; min-height: 100vh; margin: 0; }
+  main { display: grid; justify-items: center; gap: 1.1rem; padding: 2rem 1rem; }
+  canvas { width: min(440px, 88vw); height: min(440px, 88vw); color: #6FD8F2; }
+  .row { display: flex; flex-wrap: wrap; justify-content: center; gap: .45rem; }
+  button, label.file { font: inherit; font-size: .9rem; color: inherit; background: none; border: 1px solid #2A3D52; border-radius: 999px; padding: .35rem .95rem; cursor: pointer; }
+  button:hover, button:focus-visible, label.file:hover, label.file:focus-within { border-color: #6FD8F2; outline: none; }
+  button[aria-pressed="true"] { border-color: #6FD8F2; color: #6FD8F2; }
+  label.file input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  audio { width: min(440px, 88vw); }
+  audio:not([src]) { display: none; }
+  #msg { min-height: 1.4em; font-size: .9rem; color: #8FB3C8; margin: 0; }
+</style>
+</head>
+<body>
+<main>
+  <canvas id="orb" aria-hidden="true"></canvas>
+  <p id="msg" role="status">Pick a sound to start.</p>
+  <div class="row" role="group" aria-label="Sound">
+    <button type="button" id="beat" aria-pressed="false">Play demo beat</button>
+    <button type="button" id="mic" aria-pressed="false">Use microphone</button>
+    <label class="file">Choose an audio file<input type="file" id="file" accept="audio/*"></label>
+  </div>
+  <audio id="player" controls></audio>
+  <div class="row" id="shapes" role="group" aria-label="Shape"></div>
+  <div class="row" role="group" aria-label="Look">
+    <button type="button" id="style" aria-pressed="true">Lines</button>
+  </div>
+</main>
+
+<script src="../orb.js"></script>
+<script>
+  // One orb that reacts to whatever is playing. Bars follow the actual frequencies;
+  // other shapes pulse with the volume and push out on the beat.
+  const canvas = document.getElementById('orb'), msg = document.getElementById('msg');
+  const player = document.getElementById('player');
+  let style = 'lines', source = null;
+  let orb = make('bars');
+
+  function make(shape) {
+    return new Orb(canvas, { shape, shapes: shape, style, glow: true, reflect: true });
+  }
+  function use(src, text) {
+    source = src;
+    return orb.listen(src).then(() => { msg.textContent = text; });
+  }
+  function stopAll(except) {
+    if (except !== 'beat') beat.stop();
+    if (except !== 'mic' && orb.audio && orb.audio.stream) { orb.unlisten(); document.getElementById('mic').setAttribute('aria-pressed', 'false'); }
+    if (except !== 'file') player.pause();
+    ['beat', 'mic'].forEach(id => { if (id !== except) document.getElementById(id).setAttribute('aria-pressed', 'false'); });
+  }
+
+  // Demo beat, made in the browser so the example needs no audio file: kick, hats, bass and a soft chord.
+  const beat = (() => {
+    let timer = null, out = null, step = 0, next = 0;
+    const bassNotes = [55, 55, 65.4, 49], chords = [[220, 277.2, 329.6], [196, 246.9, 293.7], [174.6, 220, 261.6], [164.8, 207.7, 246.9]];
+    function noise(ctx) {
+      const b = ctx.createBuffer(1, ctx.sampleRate * 0.2, ctx.sampleRate), d = b.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      return b;
+    }
+    function env(ctx, g, t, peak, len) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + len); }
+    function play(ctx, s, t) {
+      const bar = Math.floor(s / 16) % 4, i = s % 16;
+      if (i % 4 === 0) {                                  // kick
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.25);
+        env(ctx, g, t, 0.9, 0.35); o.connect(g).connect(out); o.start(t); o.stop(t + 0.4);
+      }
+      if (i % 2 === 1) {                                  // hats
+        const n = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+        n.buffer = noise(ctx); f.type = 'highpass'; f.frequency.value = 7000;
+        env(ctx, g, t, i % 4 === 3 ? 0.18 : 0.08, 0.06); n.connect(f).connect(g).connect(out); n.start(t); n.stop(t + 0.1);
+      }
+      if (i % 4 === 2 || i === 0) {                       // bass
+        const o = ctx.createOscillator(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+        o.type = 'sawtooth'; o.frequency.value = bassNotes[bar]; f.type = 'lowpass'; f.frequency.value = 600;
+        env(ctx, g, t, 0.35, 0.22); o.connect(f).connect(g).connect(out); o.start(t); o.stop(t + 0.3);
+      }
+      if (i === 0) chords[bar].forEach(fr => {            // chord
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'triangle'; o.frequency.value = fr; env(ctx, g, t, 0.08, 1.9); o.connect(g).connect(out); o.start(t); o.stop(t + 2);
+      });
+    }
+    return {
+      start() {
+        const ctx = Orb.audioContext(); ctx.resume();
+        out = ctx.createGain(); out.gain.value = 0.6; out.connect(ctx.destination);
+        step = 0; next = ctx.currentTime + 0.05;
+        timer = setInterval(() => {                       // schedule a little ahead, so timing stays tight
+          while (next < ctx.currentTime + 0.12) { play(ctx, step++, next); next += 60 / 118 / 4; }
+        }, 25);
+        return out;
+      },
+      stop() { clearInterval(timer); timer = null; if (out) { out.disconnect(); out = null; } },
+      get on() { return !!timer; }
+    };
+  })();
+
+  document.getElementById('beat').addEventListener('click', e => {
+    if (beat.on) { beat.stop(); orb.unlisten(); e.target.setAttribute('aria-pressed', 'false'); msg.textContent = 'Stopped.'; return; }
+    stopAll('beat');
+    e.target.setAttribute('aria-pressed', 'true');
+    use(beat.start(), 'Playing the demo beat.');
+  });
+
+  document.getElementById('mic').addEventListener('click', e => {
+    if (orb.audio && orb.audio.stream) { orb.unlisten(); e.target.setAttribute('aria-pressed', 'false'); msg.textContent = 'Microphone off.'; return; }
+    stopAll('mic');
+    use('mic', 'Listening to your microphone. Nothing is recorded or sent anywhere.')
+      .then(() => e.target.setAttribute('aria-pressed', 'true'))
+      .catch(() => { msg.textContent = 'The microphone is blocked or unavailable here.'; });
+  });
+
+  document.getElementById('file').addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    stopAll('file');
+    player.src = URL.createObjectURL(f);
+    player.play();
+  });
+  player.addEventListener('play', () => { stopAll('file'); use(player, 'Playing ' + (document.getElementById('file').files[0] || {}).name + '.'); });
+
+  const group = document.getElementById('shapes');
+  ['bars', 'sphere', 'wave', 'spikes', 'ripple', 'torus', 'infinity'].forEach(name => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = name; b.setAttribute('aria-pressed', String(name === 'bars'));
+    b.addEventListener('click', () => {
+      orb.order = [name]; orb.morph(name);
+      group.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    });
+    group.appendChild(b);
+  });
+
+  document.getElementById('style').addEventListener('click', e => {
+    style = style === 'lines' ? 'dots' : 'lines';
+    e.target.setAttribute('aria-pressed', String(style === 'lines'));
+    const shape = orb.shape, src = orb.audio ? source : null, stream = orb.audio && orb.audio.stream;
+    if (stream) orb.audio.stream = null;                  // keep the microphone running across the rebuild
+    orb.destroy(); orb = make(shape);
+    if (src) orb.listen(stream || src);
+    if (stream) orb.audio.stream = stream;
+  });
+</script>
+</body>
+</html>
