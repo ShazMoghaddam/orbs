@@ -1,3 +1,5 @@
+![Orbs: dot animations that morph, for the web](docs/banner.png)
+
 # Orbs
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)

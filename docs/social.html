@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Orbs social preview</title>
+<!-- Renders docs/social-preview.png (1280 x 640), the image shown when the repository or site is shared:
+     python3 scripts/shot.py http://localhost:4173/docs/social.html docs/social-preview.png 1280 640 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Geist:wght@300..800&family=Geist+Mono:wght@400..600&display=swap">
+<style>
+  html, body { margin: 0; width: 1280px; height: 640px; overflow: hidden; }
+  body {
+    position: relative; font-family: "Geist", "Geist Variable", sans-serif; color: #F2EDE4;
+    background: radial-gradient(110% 120% at 10% 0%, #1B1C16 0%, #0E0F0B 70%);
+  }
+  /* The footer's orange and sand, as a diagonal panel behind the orbs. */
+  .split { position: absolute; inset: 0 0 0 auto; width: 640px; background: linear-gradient(to bottom right, #FF7A45 50%, #EADCC6 50%); clip-path: polygon(18% 0, 100% 0, 100% 100%, 0 100%); }
+  .copy { position: absolute; left: 72px; top: 0; bottom: 0; width: 560px; display: grid; align-content: center; gap: 26px; }
+  .mark { display: flex; align-items: center; gap: 12px; font-size: 34px; font-weight: 650; letter-spacing: -0.02em; color: #EADCC6; }
+  .mark canvas { width: 46px; height: 46px; color: #FF7A45; }
+  h1 { margin: 0; font: 400 66px/1.02 "Fraunces", "Fraunces Variable", serif; letter-spacing: -0.012em; font-variation-settings: "opsz" 144; }
+  h1 em { color: #FF7A45; }
+  .sub { font: 500 20px/1.4 "Geist Mono", "Geist Mono Variable", monospace; color: #A49F93; letter-spacing: .01em; }
+  .orbs { position: absolute; right: 56px; top: 50%; translate: 0 -50%; display: grid; grid-template-columns: 230px 230px; gap: 20px 28px; }
+  .orbs canvas { width: 230px; height: 230px; color: #2B0E02; display: block; }
+</style>
+
+<div class="split"></div>
+<div class="copy">
+  <div class="mark"><canvas data-orb="sphere" data-points="60" data-dot="1.2" data-shapes="sphere" aria-hidden="true"></canvas>Orbs</div>
+  <h1>Dot animations that <em>morph</em>, in one line of HTML.</h1>
+  <div class="sub">16 shapes · one file · no dependencies</div>
+</div>
+<div class="orbs">
+  <canvas data-orb="torus" data-shapes="torus" data-dot="1.9" aria-hidden="true"></canvas>
+  <canvas data-orb="bars" data-shapes="bars" data-dot="2" aria-hidden="true"></canvas>
+  <canvas data-orb="infinity" data-shapes="infinity" data-dot="2" aria-hidden="true"></canvas>
+  <canvas data-orb="check" data-shapes="check" data-dot="2" aria-hidden="true"></canvas>
+</div>
+<script src="../orb.js"></script>
+</html>
