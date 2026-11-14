@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.6.0 (2026-11-14)
+
+- Named states: `orb.state('thinking')` picks a shape and pace together. Built in: `idle`, `listening`, `thinking`, `working`, `speaking`, `active`, `loading`, `success` and `error`. Add your own to `Orb.states`.
+- New `data-state` attribute. Changing it later switches state, so React and Vue only need to set an attribute.
+- New `orb:state` event, with the state and shape in `e.detail`.
+- New `data-follow`: the orb leans gently towards the pointer.
+- New `data-scroll-tilt`: the orb tilts as it scrolls through the page.
+- Studio: state buttons on the Shape tab, and cursor and scroll switches on the Motion tab.
+- About 11 KB gzipped (up from 10.5 KB).
+
 ## 1.5.0 (2026-11-14)
 
 - Four new shapes, twenty in all: `vortex` (three arms spiralling into a funnel, for thinking), `blob` (a sphere that wobbles like liquid), `iris` (an eye with a breathing pupil, a glance and a blink, for listening) and `orbit` (four large, soft dots circling, for calm moments).

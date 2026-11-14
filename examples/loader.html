@@ -15,7 +15,7 @@
 <div>
   <div class="status" role="status">
     <canvas id="orb" aria-hidden="true"></canvas>
-    <span id="label">Listening...</span>
+    <span id="label">Ready</span>
   </div>
   <br>
   <button id="step" type="button">Next state</button>
@@ -23,13 +23,13 @@
 
 <script src="../orb.js"></script>
 <script>
-  // One orb, five states: morph between them instead of swapping spinners.
-  const orb = new Orb(document.getElementById('orb'), { shape: 'ripple', points: 90 });
-  const states = [['ripple', 'Listening...'], ['ticks', 'Thinking...'], ['bars', 'Speaking...'], ['check', 'Done'], ['cross', 'Something went wrong']];
+  // One orb, six named states: each picks its own shape and pace, instead of swapping spinners.
+  const orb = new Orb(document.getElementById('orb'), { state: 'idle', points: 90 });
+  const states = [['idle', 'Ready'], ['listening', 'Listening...'], ['thinking', 'Thinking...'], ['speaking', 'Speaking...'], ['success', 'Done'], ['error', 'Something went wrong']];
   let i = 0;
   document.getElementById('step').addEventListener('click', () => {
     i = (i + 1) % states.length;
-    orb.morph(states[i][0]);
+    orb.state(states[i][0]);
     document.getElementById('label').textContent = states[i][1];
   });
 </script>

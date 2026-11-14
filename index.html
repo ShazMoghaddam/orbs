@@ -120,7 +120,13 @@
         </div>
 
         <div class="panel__body" role="tabpanel" id="pp-shape" aria-labelledby="pt-shape" data-ppanel="shape">
-          <div class="shapes" role="radiogroup" aria-label="Shape" data-shape-picker></div>
+          <div class="field">
+            <span class="field__l" id="states-l">States <output>for AI and status</output></span>
+            <div class="states" role="group" aria-labelledby="states-l" data-state-picker></div>
+            <p class="hint">A state picks a shape and pace for you. In your code it's <code>orb.state('thinking')</code> or <code>data-state="thinking"</code>.</p>
+          </div>
+          <span class="field__l" id="shapes-l">Shapes</span>
+          <div class="shapes" role="radiogroup" aria-labelledby="shapes-l" data-shape-picker></div>
         </div>
 
         <div class="panel__body" role="tabpanel" id="pp-look" aria-labelledby="pt-look" data-ppanel="look" hidden>
@@ -175,6 +181,8 @@
             <label class="field__l" for="in-tilt">Tilt <output data-out="tilt">0°</output></label>
             <input type="range" id="in-tilt" min="-60" max="60" step="5" value="0" data-input="tilt">
           </div>
+          <label class="toggle">Lean towards the cursor <input type="checkbox" data-input="follow"></label>
+          <label class="toggle">Tilt as the page scrolls <input type="checkbox" data-input="scrollTilt"></label>
           <label class="toggle">Cycle through shapes <input type="checkbox" data-input="cycle-on"></label>
           <div class="field" data-when="cycle-on" hidden>
             <label class="field__l" for="in-cycle">Every <output data-out="cycle">4 s</output></label>
@@ -209,7 +217,7 @@
   <section class="section install" id="install" aria-labelledby="install-h">
     <div class="section__head">
       <h2 id="install-h">Get the code</h2>
-      <p>One file, about 10.5 KB gzipped, no dependencies. Every card follows the changes you make in the Studio.</p>
+      <p>One file, about 11 KB gzipped, no dependencies. Every card follows the changes you make in the Studio.</p>
     </div>
     <div class="ways">
       <div class="way">
@@ -245,13 +253,13 @@
     <div class="foot__in">
       <div class="foot__about">
         <a class="mark" href="#top" aria-label="Orbs, back to the top"><canvas class="mark__orb" data-foot-orb aria-hidden="true"></canvas>Orbs</a>
-        <p class="foot__eyebrow">Open-source canvas animations · v1.5</p>
+        <p class="foot__eyebrow">Open-source canvas animations · v1.6</p>
         <p class="foot__lede">Twenty dot formations that morph into one another, from loaders and AI states to success and error badges. Draw them as dots or glowing lines, let them move with sound, then drop one line of HTML into any site.</p>
       </div>
 
       <dl class="foot__specs">
         <div><dt>Dependencies</dt><dd>0</dd></div>
-        <div><dt>Gzipped</dt><dd>10.5 kB</dd></div>
+        <div><dt>Gzipped</dt><dd>11 kB</dd></div>
         <div><dt>Shapes</dt><dd>20</dd></div>
       </dl>
 

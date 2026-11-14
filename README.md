@@ -3,14 +3,14 @@
 # Orbs
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-![Size](https://img.shields.io/badge/gzipped-~10.5KB-brightgreen)
+![Size](https://img.shields.io/badge/gzipped-~11KB-brightgreen)
 ![Dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
 [![jsDelivr](https://data.jsdelivr.com/v1/package/gh/ShazMoghaddam/orbs/badge)](https://www.jsdelivr.com/package/gh/ShazMoghaddam/orbs)
 [![GitHub stars](https://img.shields.io/github/stars/ShazMoghaddam/orbs?style=social)](https://github.com/ShazMoghaddam/orbs)
 
 Twenty morphing dot-formation animations for the web. Use them for loaders, AI "listening", "thinking" and "speaking" states, success and error badges, ambient desk displays, or one memorable moment in a hero.
 
-One file, about 10.5 KB gzipped, no dependencies, no build step.
+One file, about 11 KB gzipped, no dependencies, no build step.
 
 **[Open the Studio](https://shazmoghaddam.github.io/orbs/#studio)** to design an orb and copy its code · See one in a real page in the Contact section of [shazmoghaddam.github.io](https://shazmoghaddam.github.io)
 
@@ -23,7 +23,7 @@ Add a canvas, size it with CSS, then load the script.
 ```html
 <canvas data-orb="torus" style="width:200px; height:200px; color:#FF4400" aria-hidden="true"></canvas>
 
-<script src="https://cdn.jsdelivr.net/gh/ShazMoghaddam/orbs@1.5.0/orb.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/gh/ShazMoghaddam/orbs@1.6.0/orb.min.js" defer></script>
 ```
 
 Every `<canvas data-orb>` on the page starts automatically. The dots use the canvas's CSS `color`, so you theme an orb the same way you theme text.
@@ -80,6 +80,9 @@ Set options as `data-` attributes, or pass them to the constructor.
 | `data-audio` | `audio` | off | CSS selector of an `<audio>` or `<video>` to react to once it plays. See [React to sound](#react-to-sound) |
 | `data-audio-amount` | `audioAmount` | `1` | How strongly it reacts to sound |
 | `data-tilt` | `tilt` | `0` | Extra tilt in degrees, added to each shape's own angle |
+| `data-state` | `state` | none | A named state, such as `thinking`. See [Named states](#named-states). Change the attribute later to switch |
+| `data-follow` | `follow: true` | off | Lean towards the pointer |
+| `data-scroll-tilt` | `scrollTilt: true` | off | Tilt as the orb scrolls through the page |
 | `data-reflect` | `reflect` | off | A faded mirror image underneath. On its own it uses 0.35; a number from 0 to 1 sets its strength |
 
 ## Lines style
@@ -140,6 +143,7 @@ const orb = new Orb(canvas, { shape: 'wave', points: 90 });
 
 orb.morph('ticks');   // go to a specific shape
 orb.next();           // go to the next shape in `shapes`
+orb.state('thinking');  // a named state: shape and pace together
 orb.set({ style: 'lines', glow: 10, speed: 0.6 });   // change settings while it runs
 orb.destroy();        // stop and remove listeners
 
@@ -151,17 +155,45 @@ Orb.init(root);       // start any <canvas data-orb> added after the page loaded
 
 `set` takes any option from the table above except the shape list for hover and click, and changes it without restarting the orb. Changing `points` rebuilds the shape in place. `Orb.init` is handy in React, Vue or anything else that adds canvases later; it skips canvases that are already running.
 
-Morphing one orb between states reads better than swapping spinners. For example:
+## Named states
+
+Most orbs show what something is doing, so Orbs has names for that. A state picks a shape and a pace, and morphing one orb between states reads better than swapping spinners.
+
+| State | Shape | Feels |
+| --- | --- | --- |
+| `idle` | `orbit` | calm, unhurried |
+| `listening` | `iris` | attentive |
+| `thinking` | `vortex` | computational |
+| `working` | `ticks` | busy |
+| `speaking` | `bars` | voice |
+| `active` | `blob` | responsive |
+| `loading` | `infinity` | patient |
+| `success` | `check` | done |
+| `error` | `cross` | something went wrong |
 
 ```js
-orb.morph('ripple');  // listening
-orb.morph('ticks');   // thinking
-orb.morph('bars');    // speaking
-orb.morph('check');   // done
-orb.morph('cross');   // something went wrong
+orb.state('listening');
+orb.state('thinking');
+orb.state('success');
+
+canvas.addEventListener('orb:state', e => console.log(e.detail.state));
 ```
 
-See [`examples/loader.html`](examples/loader.html).
+Or with no JavaScript at all: `<canvas data-orb data-state="thinking">`. Change the attribute later and the orb follows, which is all React or Vue needs:
+
+```jsx
+<canvas data-orb data-state={busy ? 'thinking' : 'idle'} />
+```
+
+Add or change states with `Orb.states.reviewing = { shape: 'helix', speed: 0.6 }`. A state stops any cycling, since it says exactly what the orb should show. See [`examples/loader.html`](examples/loader.html).
+
+## Cursor and scroll
+
+`data-follow` makes an orb lean gently towards the pointer, and `data-scroll-tilt` tilts it as it moves through the page. Both ease in rather than snap, sit on top of the shape's own motion, and turn off when the visitor has reduced motion on.
+
+```html
+<canvas data-orb="torus" data-follow data-scroll-tilt aria-hidden="true"></canvas>
+```
 
 ## Custom shapes
 
