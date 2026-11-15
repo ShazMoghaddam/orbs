@@ -1,10 +1,11 @@
 /*!
- * Orbs v1.6.0 · dot-formation animations on <canvas>. Zero dependencies. MIT.
+ * Orbs v1.7.0 · dot-formation animations on <canvas>. Zero dependencies. MIT.
  * https://github.com/ShazMoghaddam/orbs · Shaz Moghaddam
  *
  * Usage:
  *   <canvas data-orb="sphere" aria-hidden="true"></canvas>
  *   <script src="orb.js" defer></script>   (or inline it)
+ *   npm install @shazmoghaddam/orbs, then: import Orb from '@shazmoghaddam/orbs'
  *
  * Shapes: sphere, wave, spikes, constellation, torus, helix, galaxy, ticks, cube, clusters,
  *         ripple, bars, atom, infinity, vortex, blob, iris, orbit, check, cross
@@ -43,6 +44,17 @@
 (function (global) {
   'use strict';
 
+  // Server rendering (Next.js, Nuxt and the like) has no page to draw on. Export a stand-in so the
+  // import is safe there; create orbs in the browser, for example inside useEffect or onMounted.
+  if (!global || !global.document) {
+    var Stub = function () { throw new Error('Orbs draws on a <canvas>, so create it in the browser, not during server rendering.'); };
+    Stub.shapes = {}; Stub.states = {};
+    Stub.define = Stub.init = function () {};
+    Stub.audioContext = function () { return null; };
+    if (typeof module === 'object' && module.exports) module.exports = Stub;
+    return;
+  }
+
   var TAU = Math.PI * 2;
   var GOLDEN = Math.PI * (3 - Math.sqrt(5));
   var reduceMQ = global.matchMedia ? global.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
@@ -61,7 +73,7 @@
   function fib(n) {
     var pts = [];
     for (var i = 0; i < n; i++) {
-      var y = 1 - (i / (n - 1)) * 2, k = Math.sqrt(1 - y * y), t = GOLDEN * i;
+      var y = n > 1 ? 1 - (i / (n - 1)) * 2 : 0, k = Math.sqrt(1 - y * y), t = GOLDEN * i;   // one point sits at the centre line
       pts.push([Math.cos(t) * k, y, Math.sin(t) * k]);
     }
     return pts;
@@ -1115,4 +1127,5 @@
   else init();
 
   global.Orb = Orb;
-})(window);
+  if (typeof module === 'object' && module.exports) module.exports = Orb;   // npm and bundlers
+})(typeof window !== 'undefined' ? window : undefined);

@@ -1,8 +1,14 @@
 # Changelog
 
-## Unreleased
+## 1.7.0 (2026-11-15)
 
-- Studio: Export saves your orb as a video (MP4 where the browser can make it, otherwise WebM, at 1080 px), an animated GIF, or a high-resolution PNG with an optional transparent background, in square, wide 16:9 or tall 9:16 frames.
+- On npm: `npm install @shazmoghaddam/orbs`, then `import Orb from '@shazmoghaddam/orbs'`. Script tags and jsDelivr work as before.
+- TypeScript types (`orb.d.ts`) for every option, shape, state, method and event.
+- Safe to import during server rendering (Next.js, Nuxt and the like): the server gets a stand-in, and orbs are created in the browser.
+- Studio: React and Vue cards in Get the code, filled in with your settings, plus Export, which saves your orb as a video (MP4 or WebM, 1080 px), an animated GIF, or a high-resolution PNG with an optional transparent background, in square, wide or tall frames.
+- Fix: a shape asked for a single point no longer produces an invalid position.
+- Repo: tests, a 12 KB gzip size budget and a built-file check in CI on every pull request; npm publishing from GitHub releases with trusted publishing; weekly Dependabot; SECURITY.md and CONTRIBUTING.md.
+- About 11 KB gzipped, unchanged.
 
 ## 1.6.0 (2026-11-14)
 
