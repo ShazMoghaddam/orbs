@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Studio: Export saves your orb as a video (MP4 where the browser can make it, otherwise WebM, at 1080 px), an animated GIF, or a high-resolution PNG with an optional transparent background, in square, wide 16:9 or tall 9:16 frames.
+
 ## 1.6.0 (2026-11-14)
 
 - Named states: `orb.state('thinking')` picks a shape and pace together. Built in: `idle`, `listening`, `thinking`, `working`, `speaking`, `active`, `loading`, `success` and `error`. Add your own to `Orb.states`.

@@ -12,7 +12,7 @@ Twenty morphing dot-formation animations for the web. Use them for loaders, AI "
 
 One file, about 11 KB gzipped, no dependencies, no build step.
 
-**[Open the Studio](https://shazmoghaddam.github.io/orbs/#studio)** to design an orb and copy its code · See one in a real page in the Contact section of [shazmoghaddam.github.io](https://shazmoghaddam.github.io)
+**[Open the Studio](https://shazmoghaddam.github.io/orbs/#studio)** to design an orb, copy its code, or export it as a video, GIF or image · See one in a real page in the Contact section of [shazmoghaddam.github.io](https://shazmoghaddam.github.io)
 
 ![Eight orbs: a waveform, an AI assistant, a sliced globe, a success badge, a network, a loader, a galaxy and spikes](docs/preview.webp)
 
