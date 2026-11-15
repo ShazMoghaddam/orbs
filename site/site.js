@@ -4,7 +4,7 @@
 (function () {
   'use strict';
 
-  var CDN = 'https://cdn.jsdelivr.net/gh/ShazMoghaddam/orbs@1.6.0/orb.min.js';
+  var CDN = 'https://cdn.jsdelivr.net/gh/ShazMoghaddam/orbs@1.7.0/orb.min.js';
   var DEFAULTS = {
     shape: 'torus', style: 'dots', color: '#FF7A45', points: null, dot: 1.2, line: 0,
     glow: 0, reflect: 0, size: 320, speed: 0.35, tilt: 0, cycle: 0, shapes: null, audioAmount: 1,
@@ -247,18 +247,60 @@
     parts.push(tag('canvas', canvasAttrs(), true));
     return [parts.map(function (p) { return p[0]; }).join('\n\n'), parts.map(function (p) { return p[1]; }).join('\n\n')];
   }
-  function jsSnippet() {
+  function optionList() {
     var s = state, o = [], st = s.state && Orb.states[s.state], usesState = st && st.shape === s.shape;
     var stateSpeed = usesState && st.speed != null ? st.speed : DEFAULTS.speed;
     o.push(usesState ? "state: '" + s.state + "'" : "shape: '" + s.shape + "'");
     if (s.style === 'lines') o.push("style: 'lines'");
     if (s.points) o.push('points: ' + s.points);
+    if (s.dot !== DEFAULTS.dot) o.push('dot: ' + s.dot);
+    if (s.line) o.push('line: ' + s.line);
     if (s.glow) o.push('glow: ' + s.glow);
     if (s.reflect) o.push('reflect: ' + s.reflect);
     if (s.speed !== stateSpeed) o.push('speed: ' + s.speed);
     if (s.tilt) o.push('tilt: ' + s.tilt);
+    if (s.cycle) { o.push('cycle: ' + Math.round(s.cycle * 1000)); if (s.shapes) o.push("shapes: '" + s.shapes + "'"); }
     if (s.follow) o.push('follow: true');
     if (s.scrollTilt) o.push('scrollTilt: true');
+    return o;
+  }
+  // One pass over the text, so a span added for a comment is never re-read as a string.
+  function highlight(plain) {
+    return esc(plain).replace(/(\/\/[^\n]*)|('[^'\n]*'|"[^"\n]*")|\b(const|let|import|from|export|function|return|new)\b/g,
+      function (m, comment, str, kw) {
+        return comment ? '<span class="c">' + comment + '</span>' : str ? '<span class="v">' + str + '</span>' : '<span class="t">' + kw + '</span>';
+      });
+  }
+  // For React and Vue the state comes from a prop, so the starting shape or state stays out of the options.
+  function frameworkOptions() {
+    return optionList().filter(function (x) { return x.indexOf('state:') !== 0 && x.indexOf('shape:') !== 0; });
+  }
+  function startState() { return state.state && Orb.states[state.state] && Orb.states[state.state].shape === state.shape ? state.state : null; }
+  function reactSnippet() {
+    var extra = frameworkOptions(), st = startState();
+    var opts = st ? '{ state' + (extra.length ? ', ' + extra.join(', ') : '') + ' }' : "{ shape: '" + state.shape + "'" + (extra.length ? ', ' + extra.join(', ') : '') + ' }';
+    var plain = "import { useEffect, useRef } from 'react';\nimport Orb from '@shazmoghaddam/orbs';\n\n" +
+      "export function MyOrb({ state = '" + (st || 'idle') + "' }) {\n" +
+      "  const canvas = useRef(null);\n  const orb = useRef(null);\n" +
+      "  useEffect(() => {\n    orb.current = new Orb(canvas.current, " + opts + ");\n    return () => orb.current.destroy();\n  }, []);\n" +
+      (st ? "  useEffect(() => { orb.current?.state(state); }, [state]);   // 'listening', 'thinking', 'success'...\n" : '') +
+      "  return <canvas ref={canvas} style={{ width: " + state.size + ", height: " + state.size + ", color: '" + state.color + "' }} aria-hidden=\"true\" />;\n}";
+    return [plain, highlight(plain)];
+  }
+  function vueSnippet() {
+    var extra = frameworkOptions(), st = startState();
+    var opts = st ? '{ state: props.state' + (extra.length ? ', ' + extra.join(', ') : '') + ' }' : "{ shape: '" + state.shape + "'" + (extra.length ? ', ' + extra.join(', ') : '') + ' }';
+    var plain = "<script setup>\nimport { ref, watch, onMounted, onBeforeUnmount } from 'vue';\nimport Orb from '@shazmoghaddam/orbs';\n\n" +
+      "const props = defineProps({ state: { type: String, default: '" + (st || 'idle') + "' } });\n" +
+      "const canvas = ref(null);\nlet orb;\n" +
+      "onMounted(() => { orb = new Orb(canvas.value, " + opts + "); });\n" +
+      (st ? "watch(() => props.state, (s) => orb?.state(s));   // 'listening', 'thinking', 'success'...\n" : '') +
+      "onBeforeUnmount(() => orb?.destroy());\n<\/script>\n\n<template>\n" +
+      "  <canvas ref=\"canvas\" style=\"width: " + state.size + "px; height: " + state.size + "px; color: " + state.color + "\" aria-hidden=\"true\" />\n</template>";
+    return [plain, highlight(plain)];
+  }
+  function jsSnippet() {
+    var o = optionList();
     var opts = o.length > 2 ? '{\n  ' + o.join(',\n  ') + '\n}' : '{ ' + o.join(', ') + ' }';
     var plain = 'const orb = new Orb(canvas, ' + opts + ');\n\n' +
       "orb.state('thinking');           // named states: idle, listening, thinking, speaking, success...\n" +
@@ -266,17 +308,16 @@
       "orb.set({ glow: 12, speed: 0.6 }); // change settings live\n" +
       "button.onclick = () => orb.listen('mic'); // react to sound\n\n" +
       "canvas.addEventListener('orb:morph', e => console.log(e.detail.shape));";
-    var html = esc(plain)
-      .replace(/(\/\/[^\n]*)/g, '<span class="c">$1</span>')
-      .replace(/('[^'\n]*')/g, '<span class="v">$1</span>')
-      .replace(/\b(const|new|=&gt;)\b/g, '<span class="t">$1</span>');
-    return [plain, html];
+    return [plain, highlight(plain)];
   }
   function render() {
     var sn = snippet(), js = jsSnippet();
     $('[data-snippet]').innerHTML = sn[1];
     $('[data-code="js"]').innerHTML = js[1];
     render.snippet = sn[0]; render.js = js[0];
+    var re = reactSnippet(), vu = vueSnippet();
+    $('[data-code="react"]').innerHTML = re[1]; $('[data-code="vue"]').innerHTML = vu[1];
+    render.react = re[0]; render.vue = vu[0];
     if (typeof deskUrl === 'function') {
       render.desk = deskUrl();
       $('[data-code="desk-url"]').textContent = render.desk;
@@ -344,7 +385,8 @@
   $$('[data-copy]').forEach(function (b) {
     b.addEventListener('click', function () {
       var where = b.closest('.install') ? $('[data-copy-note]') : $('[data-note]');
-      copy(b.dataset.copy === 'js' ? render.js : b.dataset.copy === 'desk-url' ? render.desk : render.snippet, b, where);
+      var which = { js: render.js, 'desk-url': render.desk, react: render.react, vue: render.vue }[b.dataset.copy];
+      copy(which || render.snippet, b, where);
     });
   });
 

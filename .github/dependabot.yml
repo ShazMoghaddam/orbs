@@ -1,0 +1,29 @@
+# Weekly checks for out-of-date dependencies. Minor and patch updates are
+# grouped, so each ecosystem opens one pull request a week at most.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Europe/London
+    groups:
+      npm-minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # terser is pinned because CI checks that orb.min.js matches a fresh build, and a
+      # new terser can change the output. Upgrade it by hand: bump the version, run
+      # npm run check and commit the rebuilt orb.min.js.
+      - dependency-name: terser
+        update-types: [version-update:semver-major, version-update:semver-minor, version-update:semver-patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Europe/London
+    groups:
+      actions-minor-and-patch:
+        update-types: [minor, patch]

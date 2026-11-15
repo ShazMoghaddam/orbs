@@ -1,22 +1,72 @@
 {
   "name": "@shazmoghaddam/orbs",
-  "version": "1.6.0",
-  "description": "Twenty morphing dot-formation animations on canvas. One file, no dependencies.",
+  "version": "1.7.0",
+  "description": "Twenty morphing dot animations for the web, with a lines style, glow, sound, named states and a desk display. One file, no dependencies.",
   "main": "orb.js",
+  "types": "orb.d.ts",
+  "exports": {
+    ".": {
+      "types": "./orb.d.ts",
+      "default": "./orb.js"
+    },
+    "./orb.min.js": "./orb.min.js",
+    "./package.json": "./package.json"
+  },
   "browser": "orb.min.js",
   "unpkg": "orb.min.js",
   "jsdelivr": "orb.min.js",
-  "files": ["orb.js", "orb.min.js"],
+  "files": [
+    "orb.js",
+    "orb.min.js",
+    "orb.d.ts"
+  ],
+  "sideEffects": true,
   "scripts": {
-    "build": "terser orb.js -c -m --comments '/^!/' -o orb.min.js"
+    "build": "terser orb.js -c -m --comments '/^!/' -o orb.min.js",
+    "test": "node --test test/*.test.js",
+    "size": "node scripts/size.mjs",
+    "check": "npm run build && npm test && npm run size",
+    "serve": "python3 -m http.server 4173",
+    "prepublishOnly": "npm run check"
   },
   "devDependencies": {
     "terser": "^5.31.0"
   },
-  "keywords": ["orb", "animation", "canvas", "loader", "spinner", "status", "voice", "ai", "waveform", "glow", "audio", "visualizer", "microphone", "particles", "generative", "vanilla-js", "zero-dependency"],
+  "keywords": [
+    "orb",
+    "animation",
+    "canvas",
+    "loader",
+    "spinner",
+    "status",
+    "voice",
+    "ai",
+    "waveform",
+    "glow",
+    "audio",
+    "visualizer",
+    "microphone",
+    "particles",
+    "generative",
+    "vanilla-js",
+    "zero-dependency",
+    "typescript",
+    "react",
+    "vue",
+    "states",
+    "desk-display"
+  ],
   "author": "Shaz Moghaddam (https://shazmoghaddam.github.io)",
   "license": "MIT",
-  "repository": { "type": "git", "url": "https://github.com/ShazMoghaddam/orbs.git" },
-  "homepage": "https://shazmoghaddam.github.io/orbs",
-  "bugs": { "url": "https://github.com/ShazMoghaddam/orbs/issues" }
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ShazMoghaddam/orbs.git"
+  },
+  "homepage": "https://shazmoghaddam.github.io/orbs/",
+  "bugs": {
+    "url": "https://github.com/ShazMoghaddam/orbs/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

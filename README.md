@@ -2,6 +2,8 @@
 
 # Orbs
 
+[![npm](https://img.shields.io/npm/v/@shazmoghaddam/orbs)](https://www.npmjs.com/package/@shazmoghaddam/orbs)
+[![CI](https://github.com/ShazMoghaddam/orbs/actions/workflows/ci.yml/badge.svg)](https://github.com/ShazMoghaddam/orbs/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Size](https://img.shields.io/badge/gzipped-~11KB-brightgreen)
 ![Dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
@@ -23,12 +25,66 @@ Add a canvas, size it with CSS, then load the script.
 ```html
 <canvas data-orb="torus" style="width:200px; height:200px; color:#FF4400" aria-hidden="true"></canvas>
 
-<script src="https://cdn.jsdelivr.net/gh/ShazMoghaddam/orbs@1.6.0/orb.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/gh/ShazMoghaddam/orbs@1.7.0/orb.min.js" defer></script>
 ```
 
 Every `<canvas data-orb>` on the page starts automatically. The dots use the canvas's CSS `color`, so you theme an orb the same way you theme text.
 
 You can also download `orb.min.js` and host it yourself.
+
+### With npm
+
+```bash
+npm install @shazmoghaddam/orbs
+```
+
+```js
+import Orb from '@shazmoghaddam/orbs';
+
+const orb = new Orb(canvas, { state: 'thinking', style: 'lines', glow: true });
+```
+
+TypeScript types are included, so your editor suggests every option, shape and state. Importing on a server (Next.js, Nuxt and the like) is safe; create the orb in the browser.
+
+### React
+
+```jsx
+import { useEffect, useRef } from 'react';
+import Orb from '@shazmoghaddam/orbs';
+
+export function StatusOrb({ state = 'idle' }) {
+  const canvas = useRef(null);
+  const orb = useRef(null);
+  useEffect(() => {
+    orb.current = new Orb(canvas.current, { state });
+    return () => orb.current.destroy();
+  }, []);
+  useEffect(() => { orb.current?.state(state); }, [state]);
+  return <canvas ref={canvas} style={{ width: 200, height: 200, color: '#FF7A45' }} aria-hidden="true" />;
+}
+```
+
+### Vue
+
+```vue
+<script setup>
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import Orb from '@shazmoghaddam/orbs';
+
+const props = defineProps({ state: { type: String, default: 'idle' } });
+const canvas = ref(null);
+let orb;
+onMounted(() => { orb = new Orb(canvas.value, { state: props.state }); });
+watch(() => props.state, (s) => orb?.state(s));
+onBeforeUnmount(() => orb?.destroy());
+</script>
+
+<template>
+  <canvas ref="canvas" style="width: 200px; height: 200px; color: #FF7A45" aria-hidden="true" />
+</template>
+```
+
+The [Studio](https://shazmoghaddam.github.io/orbs/#studio) writes these for you, with your settings filled in.
 
 ## Shapes
 
@@ -257,19 +313,27 @@ Any current browser with canvas, `requestAnimationFrame` and `ResizeObserver`. O
 
 ## Building from source
 
-`orb.min.js` is generated from `orb.js` with terser. After changing `orb.js`, rebuild it:
+`orb.min.js` is generated from `orb.js` with terser. After changing `orb.js`:
 
 ```bash
 npm install
-npm run build
+npm run check   # rebuilds orb.min.js, runs the tests and checks the size budget
+npm run serve   # then open http://localhost:4173/
 ```
 
-Then open `index.html` or the files in `examples/` to check the result.
+CI runs the same check on every pull request.
 
 If Orbs is useful to you, a star on the repo helps other developers find it.
 
-## License
+## Contributing
 
-MIT. Use it in anything, commercial included. A link back is appreciated but not required.
+Bug reports, new shapes and Studio ideas are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md), and report security problems privately as [SECURITY.md](SECURITY.md) explains.
 
-Made by [Shaz Moghaddam](https://shazmoghaddam.github.io) in London.
+## Licence
+
+[MIT](LICENSE). Use it in anything, commercial included. A link back is appreciated but not required.
+
+---
+
+Created by **Shaz Moghaddam** · London\
+[Website](https://shazmoghaddam.github.io/) · [LinkedIn](https://www.linkedin.com/in/shazmoghaddam/)
