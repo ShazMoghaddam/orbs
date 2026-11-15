@@ -398,6 +398,162 @@
     });
   });
 
+  /* ── Export: the Studio orb as a video, GIF or still image ── */
+  var EX = {
+    sizes: {
+      video: { square: [1080, 1080], wide: [1920, 1080], tall: [1080, 1920] },
+      gif:   { square: [600, 600],   wide: [800, 450],   tall: [450, 800] },
+      image: { square: [1600, 1600], wide: [1920, 1080], tall: [1080, 1920] }
+    },
+    hints: {
+      video: 'Sharp, at 1080 px and 30 frames a second. MP4 where your browser can make it, otherwise WebM.',
+      gif: 'Plays anywhere, including slides and chat apps. 20 frames a second, kept small.',
+      image: 'A still of the current moment, at high resolution. Choose Clear for a transparent background.'
+    },
+    pick: { format: 'video', frame: 'square', bg: '#0E0F0B', len: 5 },
+    busy: false, cancel: false
+  };
+  var exDialog = $('[data-export]');
+  function videoType() {
+    if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) return null;
+    var c = ['video/mp4;codecs=avc1.640028', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
+    for (var i = 0; i < c.length; i++) if (MediaRecorder.isTypeSupported(c[i])) return c[i];
+    return null;
+  }
+  function exSync() {
+    var p = EX.pick;
+    if (p.format !== 'image' && p.bg === 'transparent') p.bg = '#0E0F0B';
+    $$('[data-ex]', exDialog).forEach(function (g) {
+      $$('button', g).forEach(function (b) {
+        b.setAttribute('aria-pressed', String(b.dataset.v === p[g.dataset.ex]));
+        if (b.hasAttribute('data-image-only')) b.disabled = p.format !== 'image';
+      });
+    });
+    $('[data-ex-length]', exDialog).hidden = p.format === 'image';
+    $('[data-ex-out="len"]', exDialog).textContent = p.len + ' s';
+    var noVideo = p.format === 'video' && !videoType();
+    $('[data-ex-hint]', exDialog).textContent = noVideo ? 'This browser can’t record video. Try GIF instead, or another browser.' : EX.hints[p.format];
+    var go = $('[data-export-go]', exDialog);
+    go.textContent = EX.busy ? 'Exporting…' : 'Export ' + (p.format === 'gif' ? 'GIF' : p.format);
+    go.disabled = EX.busy || noVideo;
+  }
+  $$('[data-ex]', exDialog).forEach(function (g) {
+    $$('button', g).forEach(function (b) {
+      b.addEventListener('click', function () { if (!EX.busy) { EX.pick[g.dataset.ex] = b.dataset.v; exSync(); } });
+    });
+  });
+  $('[data-ex-input="len"]', exDialog).addEventListener('input', function (e) { EX.pick.len = +e.target.value; exSync(); });
+  $('[data-export-open]').addEventListener('click', function () {
+    $('[data-ex-status]', exDialog).textContent = '';
+    exSync();
+    if (exDialog.showModal) exDialog.showModal(); else exDialog.setAttribute('open', '');
+  });
+  exDialog.addEventListener('close', function () { EX.cancel = true; });
+
+  function hexRGB(h) { h = h.replace('#', ''); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; }
+  function saveBlob(blob, name) {
+    var url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    var st = $('[data-ex-status]', exDialog);
+    st.innerHTML = 'Saved <b>' + esc(name) + '</b> (' + (blob.size / 1048576).toFixed(1) + ' MB). <a href="' + url + '" download="' + esc(name) + '">Download again</a>';
+  }
+
+  // Render the orb out of sight at the export size, then paint each frame onto the chosen background.
+  function exStage(W, H, bg) {
+    var side = Math.round(Math.min(W, H) * 0.94), dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var wrap = document.createElement('div'); wrap.className = 'export-stage'; wrap.setAttribute('aria-hidden', 'true');
+    var oc = document.createElement('canvas');
+    oc.style.width = oc.style.height = side / dpr + 'px'; oc.style.color = state.color;
+    wrap.appendChild(oc); document.body.appendChild(wrap);
+    var eo = new Orb(oc, orbOptions(state));
+    if (orb.audio) eo.listen(orb.audio.stream || orb.audio.node);   // keep reacting to what's playing
+    var rec = document.createElement('canvas'); rec.width = W; rec.height = H;
+    var rc = rec.getContext('2d');
+    return {
+      rec: rec, rc: rc,
+      paint: function () {
+        if (bg === 'transparent') rc.clearRect(0, 0, W, H); else { rc.fillStyle = bg; rc.fillRect(0, 0, W, H); }
+        rc.drawImage(oc, (W - side) / 2, (H - side) / 2, side, side);
+      },
+      done: function () { eo.destroy(); wrap.remove(); }
+    };
+  }
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function progress(f) {
+    var bar = $('[data-ex-bar]', exDialog); bar.hidden = f == null;
+    if (f != null) $('[data-ex-fill]', exDialog).style.width = Math.round(f * 100) + '%';
+  }
+  // Run a paint loop for a set time, calling each() on every animation frame.
+  function runFor(seconds, each) {
+    return new Promise(function (resolve) {
+      var start = performance.now();
+      (function tick(now) {
+        if (EX.cancel) return resolve(false);
+        var t = (now - start) / 1000;
+        each(t);
+        if (t >= seconds) return resolve(true);
+        requestAnimationFrame(tick);
+      })(start);
+    });
+  }
+
+  $('[data-export-go]', exDialog).addEventListener('click', function () {
+    if (EX.busy) return;
+    var p = EX.pick, size = EX.sizes[p.format][p.frame], W = size[0], H = size[1];
+    var name = 'orbs-' + (state.state || state.shape) + '-' + p.frame;
+    var st = $('[data-ex-status]', exDialog);
+    EX.busy = true; EX.cancel = false; exSync();
+    var stage = exStage(W, H, p.bg);
+    var finish = function (msg) { stage.done(); EX.busy = false; progress(null); exSync(); if (msg) st.textContent = msg; };
+
+    st.textContent = 'Getting ready…';
+    wait(1800).then(function () {                 // let the intro morph finish first
+      if (EX.cancel) return finish();
+      if (p.format === 'image') {
+        stage.paint();
+        stage.rec.toBlob(function (b) { finish(); if (b) saveBlob(b, name + '.png'); else st.textContent = 'Couldn’t make the image.'; }, 'image/png');
+        return;
+      }
+      if (p.format === 'video') {
+        var type = videoType(), chunks = [];
+        var mr = new MediaRecorder(stage.rec.captureStream(30), { mimeType: type, videoBitsPerSecond: 12e6 });
+        mr.ondataavailable = function (e) { if (e.data.size) chunks.push(e.data); };
+        mr.onstop = function () {
+          if (EX.cancel) return finish('Export cancelled.');
+          finish();
+          saveBlob(new Blob(chunks, { type: type.split(';')[0] }), name + (type.indexOf('mp4') >= 0 ? '.mp4' : '.webm'));
+        };
+        stage.paint(); mr.start();
+        st.textContent = 'Recording ' + p.len + ' seconds…';
+        runFor(p.len, function (t) { stage.paint(); progress(Math.min(1, t / p.len)); }).then(function () { mr.stop(); });
+        return;
+      }
+      // GIF: capture 20 frames a second as palette indices, then encode.
+      var bg = hexRGB(p.bg), fg = hexRGB(state.color), d = [fg[0] - bg[0], fg[1] - bg[1], fg[2] - bg[2]];
+      var dd = d[0] * d[0] + d[1] * d[1] + d[2] * d[2] || 1, pal = new Uint8Array(768), frames = [], fps = 20, next = 0;
+      for (var i = 0; i < 256; i++) for (var c = 0; c < 3; c++) pal[i * 3 + c] = Math.round(bg[c] + d[c] * i / 255);
+      st.textContent = 'Capturing ' + p.len + ' seconds…';
+      runFor(p.len, function (t) {
+        if (t < next || frames.length >= p.len * fps) return;
+        next += 1 / fps;
+        stage.paint();
+        var px = stage.rc.getImageData(0, 0, W, H).data, idx = new Uint8Array(W * H);
+        for (var j = 0, k = 0; j < idx.length; j++, k += 4) {     // where each pixel sits between background and orb colour
+          var v = ((px[k] - bg[0]) * d[0] + (px[k + 1] - bg[1]) * d[1] + (px[k + 2] - bg[2]) * d[2]) / dd;
+          idx[j] = v <= 0 ? 0 : v >= 1 ? 255 : Math.round(v * 255);
+        }
+        frames.push(idx);
+        progress(0.5 * Math.min(1, t / p.len));
+      }).then(function (ok) {
+        if (!ok) return finish('Export cancelled.');
+        st.textContent = 'Encoding ' + frames.length + ' frames…';
+        encodeGif(frames, W, H, pal, Math.round(100 / fps), function (f) { progress(0.5 + f / 2); }).then(function (blob) {
+          finish(); saveBlob(blob, name + '.gif');
+        });
+      });
+    });
+  });
+
   /* ── Desk mode: the Studio orb, full screen ── */
   var desk = { orb: null, lock: null, idle: 0, shift: 0 };
   function deskOpen() {

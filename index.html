@@ -24,6 +24,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..800&family=Geist+Mono:wght@400..600&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&display=swap">
 <link rel="stylesheet" href="site/site.css">
 <script src="orb.js" defer></script>
+<script src="site/gif.js" defer></script>
 <script src="site/site.js" defer></script>
 </head>
 <body>
@@ -92,6 +93,7 @@
       <div class="studio__actions">
         <button type="button" class="btn btn--quiet" data-surprise>Surprise me</button>
         <button type="button" class="btn btn--quiet" data-desk>Preview in desk mode</button>
+        <button type="button" class="btn btn--quiet" data-export-open>Export</button>
       </div>
     </div>
 
@@ -240,6 +242,51 @@
     <p class="install__note" data-copy-note role="status" aria-live="polite"></p>
   </section>
 </main>
+
+<!-- Export: the current Studio orb as a video, GIF or still image. -->
+<dialog class="export" data-export aria-labelledby="export-h">
+  <form method="dialog" class="export__in" data-export-form>
+    <div class="export__head">
+      <h2 id="export-h">Export</h2>
+      <button type="submit" class="export__close" value="close" aria-label="Close">&times;</button>
+    </div>
+    <div class="field">
+      <span class="field__l" id="ex-format-l">Format</span>
+      <div class="seg" role="group" aria-labelledby="ex-format-l" data-ex="format">
+        <button type="button" data-v="video" aria-pressed="true">Video</button>
+        <button type="button" data-v="gif" aria-pressed="false">GIF</button>
+        <button type="button" data-v="image" aria-pressed="false">Image</button>
+      </div>
+      <p class="hint" data-ex-hint></p>
+    </div>
+    <div class="field">
+      <span class="field__l" id="ex-frame-l">Frame</span>
+      <div class="seg" role="group" aria-labelledby="ex-frame-l" data-ex="frame">
+        <button type="button" data-v="square" aria-pressed="true">Square</button>
+        <button type="button" data-v="wide" aria-pressed="false">Wide 16:9</button>
+        <button type="button" data-v="tall" aria-pressed="false">Tall 9:16</button>
+      </div>
+    </div>
+    <div class="field">
+      <span class="field__l" id="ex-bg-l">Background</span>
+      <div class="seg" role="group" aria-labelledby="ex-bg-l" data-ex="bg">
+        <button type="button" data-v="#0E0F0B" aria-pressed="true">Dark</button>
+        <button type="button" data-v="#000000" aria-pressed="false">Black</button>
+        <button type="button" data-v="#F4F1EA" aria-pressed="false">Light</button>
+        <button type="button" data-v="transparent" aria-pressed="false" data-image-only>Clear</button>
+      </div>
+    </div>
+    <div class="field" data-ex-length>
+      <label class="field__l" for="ex-len">Length <output data-ex-out="len">5 s</output></label>
+      <input type="range" id="ex-len" min="3" max="10" step="1" value="5" data-ex-input="len">
+    </div>
+    <div class="export__go">
+      <button type="button" class="btn btn--solid" data-export-go>Export video</button>
+      <div class="export__bar" data-ex-bar hidden><i data-ex-fill></i></div>
+    </div>
+    <p class="export__status" data-ex-status role="status" aria-live="polite"></p>
+  </form>
+</dialog>
 
 <!-- Desk mode: the current Studio orb, full screen. Esc, the button or leaving full screen closes it. -->
 <div class="desk" data-desk-overlay role="dialog" aria-modal="true" aria-label="Desk mode preview" hidden>

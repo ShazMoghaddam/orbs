@@ -267,6 +267,26 @@ input[type="range"] { width: 100%; accent-color: var(--accent); margin: 0; }
 .toggle--inline { font-size: 14px; color: var(--ink-2); justify-content: flex-start; gap: var(--s-3); }
 .install { padding-bottom: var(--s-6); }
 
+/* ---- Export dialog ---- */
+.export { width: min(440px, calc(100vw - 32px)); padding: 0; border: 1px solid var(--line); border-radius: var(--r-3); background: var(--panel); color: var(--ink); box-shadow: 0 30px 80px -20px rgba(0,0,0,.8); }
+.export::backdrop { background: rgba(5,5,4,.66); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.export__in { display: grid; gap: var(--s-4); padding: var(--s-5); }
+.export__head { display: flex; justify-content: space-between; align-items: center; }
+.export__head h2 { font: 400 28px/1 var(--f-display); letter-spacing: -0.01em; font-variation-settings: "opsz" 144; }
+.export__close { all: unset; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; font-size: 22px; color: var(--ink-2); cursor: pointer; }
+.export__close:hover { background: var(--ground-2); color: var(--ink); }
+.export__close:focus-visible { outline: 2px solid var(--focus); }
+.export .seg button[disabled] { opacity: .35; cursor: not-allowed; }
+.export__go { display: grid; gap: var(--s-3); }
+.export__go .btn { width: 100%; }
+.export__go .btn[disabled] { opacity: .6; cursor: progress; }
+.export__bar { height: 6px; border-radius: 3px; background: var(--ground-2); overflow: hidden; }
+.export__bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s linear; }
+.export__status { min-height: 1.4em; font-size: 13px; color: var(--ink-2); }
+.export__status a { color: var(--accent); font-weight: 600; }
+/* The orb being recorded renders here, invisibly, at the export size. */
+.export-stage { position: fixed; left: 0; top: 0; opacity: 0; pointer-events: none; z-index: -1; }
+
 /* ---- Desk mode ---- */
 .desk { position: fixed; inset: 0; z-index: 100; background: #000; display: grid; place-items: center; }
 .desk[data-idle] { cursor: none; }
