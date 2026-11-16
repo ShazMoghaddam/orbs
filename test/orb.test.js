@@ -25,8 +25,8 @@ function load(withWindow) {
 const Orb = load(true);
 const shapes = Object.keys(Orb.shapes);
 
-test('there are twenty shapes', () => {
-  assert.strictEqual(shapes.length, 20);
+test('there are twenty-one shapes', () => {
+  assert.strictEqual(shapes.length, 21);
 });
 
 test('every shape builds exactly n finite points, near the unit sphere', () => {

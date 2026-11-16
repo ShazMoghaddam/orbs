@@ -1,12 +1,12 @@
-// Type definitions for Orbs 1.7
+// Type definitions for Orbs 1.8
 // https://github.com/ShazMoghaddam/orbs · Shaz Moghaddam · MIT
 
 declare namespace Orb {
   /** The built-in shapes. Custom shapes added with Orb.define work too. */
   type ShapeName =
     | 'sphere' | 'wave' | 'spikes' | 'constellation' | 'torus' | 'helix' | 'galaxy' | 'ticks'
-    | 'cube' | 'clusters' | 'ripple' | 'bars' | 'atom' | 'infinity' | 'vortex' | 'blob'
-    | 'iris' | 'orbit' | 'check' | 'cross';
+    | 'cube' | 'layers' | 'clusters' | 'ripple' | 'bars' | 'atom' | 'infinity' | 'vortex'
+    | 'blob' | 'iris' | 'orbit' | 'check' | 'cross';
 
   /** The built-in named states. Add your own to Orb.states. */
   type StateName =

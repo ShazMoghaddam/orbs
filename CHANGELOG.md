@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.8.0 (2026-11-16)
+
+- New shape, twenty-one in all: `layers`, four tall, slanted diamonds packed tightly so they overlap like stacked sheets. It faces you and rocks gently rather than spinning, so it always reads as drawn. A slow wave lights each layer in turn, and with sound each layer swells to its own part of the music, low notes first. Works in dots and lines, and joins the default cycle.
+- The first release published to npm by GitHub Actions with trusted publishing, with a provenance statement linking it to its commit.
+- Fix: `package-lock.json` now carries the package's real version.
+- About 11.5 KB gzipped (up from 11.3 KB).
+
 ## 1.7.0 (2026-11-15)
 
 - On npm: `npm install @shazmoghaddam/orbs`, then `import Orb from '@shazmoghaddam/orbs'`. Script tags and jsDelivr work as before.

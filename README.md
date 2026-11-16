@@ -10,7 +10,7 @@
 [![jsDelivr](https://data.jsdelivr.com/v1/package/gh/ShazMoghaddam/orbs/badge)](https://www.jsdelivr.com/package/gh/ShazMoghaddam/orbs)
 [![GitHub stars](https://img.shields.io/github/stars/ShazMoghaddam/orbs?style=social)](https://github.com/ShazMoghaddam/orbs)
 
-Twenty morphing dot-formation animations for the web. Use them for loaders, AI "listening", "thinking" and "speaking" states, success and error badges, ambient desk displays, or one memorable moment in a hero.
+Twenty-one morphing dot-formation animations for the web. Use them for loaders, AI "listening", "thinking" and "speaking" states, success and error badges, ambient desk displays, or one memorable moment in a hero.
 
 One file, about 11 KB gzipped, no dependencies, no build step.
 
@@ -25,7 +25,7 @@ Add a canvas, size it with CSS, then load the script.
 ```html
 <canvas data-orb="torus" style="width:200px; height:200px; color:#FF4400" aria-hidden="true"></canvas>
 
-<script src="https://cdn.jsdelivr.net/gh/ShazMoghaddam/orbs@1.7.0/orb.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/gh/ShazMoghaddam/orbs@1.8.0/orb.min.js" defer></script>
 ```
 
 Every `<canvas data-orb>` on the page starts automatically. The dots use the canvas's CSS `color`, so you theme an orb the same way you theme text.
@@ -99,6 +99,7 @@ The [Studio](https://shazmoghaddam.github.io/orbs/#studio) writes these for you,
 | `galaxy` | Three spiral arms around a bright core, gently swaying |
 | `ticks` | A dashed loader ring with a pulse chasing round it |
 | `cube` | A wireframe cube built from dots |
+| `layers` | Four tall, slanted diamonds overlapping like stacked sheets, lit in a wave and rocking gently |
 | `clusters` | Four k-means style clusters breathing, linked to their centroids |
 | `ripple` | Rings spreading out from the centre and fading, for listening |
 | `bars` | Columns of dots rising and falling, for speaking |
@@ -113,7 +114,7 @@ The [Studio](https://shazmoghaddam.github.io/orbs/#studio) writes these for you,
 
 Any shape can morph into any other. Dots leave in a top-to-bottom cascade, and lines and dashes fade in and out with the morph.
 
-`check` and `cross` are status badges, so they are left out of the default cycle. Morph to them yourself, or list them in `data-shapes`. Flat shapes (`bars`, `infinity`, `iris`, `check` and `cross`) turn to face the viewer instead of spinning, so they always read clearly. `atom` is busy at loader size, so use it at about 120 px or larger.
+`check` and `cross` are status badges, so they are left out of the default cycle. Morph to them yourself, or list them in `data-shapes`. Flat shapes (`layers`, `bars`, `infinity`, `iris`, `check` and `cross`) turn to face the viewer instead of spinning, so they always read clearly. `atom` is busy at loader size, so use it at about 120 px or larger.
 
 ## Options
 

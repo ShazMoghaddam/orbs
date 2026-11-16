@@ -1,5 +1,5 @@
 /*!
- * Orbs v1.7.0 · dot-formation animations on <canvas>. Zero dependencies. MIT.
+ * Orbs v1.8.0 · dot-formation animations on <canvas>. Zero dependencies. MIT.
  * https://github.com/ShazMoghaddam/orbs · Shaz Moghaddam
  *
  * Usage:
@@ -7,8 +7,8 @@
  *   <script src="orb.js" defer></script>   (or inline it)
  *   npm install @shazmoghaddam/orbs, then: import Orb from '@shazmoghaddam/orbs'
  *
- * Shapes: sphere, wave, spikes, constellation, torus, helix, galaxy, ticks, cube, clusters,
- *         ripple, bars, atom, infinity, vortex, blob, iris, orbit, check, cross
+ * Shapes: sphere, wave, spikes, constellation, torus, helix, galaxy, ticks, cube, layers,
+ *         clusters, ripple, bars, atom, infinity, vortex, blob, iris, orbit, check, cross
  *
  * Attributes (all optional):
  *   data-orb          first shape                     (default sphere)
@@ -268,6 +268,47 @@
       });
       for (i = 0; pts.length < n; i++) pts.push(V[i % 8].slice());
       return { pts: pts.slice(0, n) };
+    }
+  });
+
+  // Layers: four tall, slanted diamonds packed tightly and stepping down to the right, so they overlap
+  // like sheets. It faces the viewer and rocks gently rather than spinning, so it always reads as drawn.
+  // A slow wave lights each layer in turn, like data passing through.
+  define('layers', {
+    face: true,
+    tilt: 0,
+    lineGap: 0.12,
+    build: function (n) {
+      var L = 4, A = [0.74, 0.4], B = [0.4, 0.74], pts = [], lay = [];   // the two edge directions
+      var O = [[-0.28, -0.82], [-0.5, -0.69], [-0.64, -0.45], [-0.86, -0.33]];   // each diamond's top corner
+      var k = Math.max(0, Math.floor((n - L * 4) / (L * 4)));   // dots between corners on each edge
+      for (var l = 0; l < L; l++) {
+        var o = O[l], V = [o, [o[0] + A[0], o[1] + A[1]], [o[0] + A[0] + B[0], o[1] + A[1] + B[1]], [o[0] + B[0], o[1] + B[1]]];
+        for (var e = 0; e < 4; e++) {
+          var a = V[e], b = V[(e + 1) % 4];
+          for (var j = 0; j <= k; j++) {
+            var f = j / (k + 1);
+            pts.push([a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, (l - 1.5) * 0.1]); lay.push(l);
+          }
+        }
+      }
+      for (var i = 0; pts.length < n; i++) {                   // spare dots double up on the corners
+        var c = (i % (L * 4)) * (k + 1);
+        pts.push(pts[c].slice()); lay.push(lay[c]);
+      }
+      return { pts: pts.slice(0, n), lay: lay };
+    },
+    deform: function (i, d, t, p, o) {
+      var a = 0.13 * Math.sin(t * 0.8), b = 0.06 * Math.sin(t * 0.55 + 1), ca = Math.cos(a), sa = Math.sin(a);
+      var x = p[0], y = p[1] - 0.03 * Math.sin(t * 1.5 - d.lay[i] * 0.9), z = p[2];   // the lit layer lifts a touch
+      o[0] = x * ca - z * sa; z = x * sa + z * ca;             // rock side to side, and a little up and down
+      o[1] = y * Math.cos(b) - z * Math.sin(b); o[2] = y * Math.sin(b) + z * Math.cos(b);
+    },
+    alpha: function (i, d, t) { return 0.75 + 0.6 * Math.pow(0.5 + 0.5 * Math.sin(t * 1.5 - d.lay[i] * 0.9), 3); },
+    size: function (i, d, t) { return 0.9 + 0.35 * Math.pow(0.5 + 0.5 * Math.sin(t * 1.5 - d.lay[i] * 0.9), 3); },
+    audio: function (i, d, A, p, o) {             // low notes swell the back layer, high notes the front
+      var l = d.lay[i] * 4, b = 1 + 0.25 * (A.bands[l] + A.bands[l + 1] + A.bands[l + 2] + A.bands[l + 3]) / 4;
+      o[0] = p[0] * b; o[1] = p[1] * b; o[2] = p[2];
     }
   });
 
