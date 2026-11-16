@@ -4,7 +4,7 @@
 (function () {
   'use strict';
 
-  var CDN = 'https://cdn.jsdelivr.net/gh/ShazMoghaddam/orbs@1.7.0/orb.min.js';
+  var CDN = 'https://cdn.jsdelivr.net/gh/ShazMoghaddam/orbs@1.8.0/orb.min.js';
   var DEFAULTS = {
     shape: 'torus', style: 'dots', color: '#FF7A45', points: null, dot: 1.2, line: 0,
     glow: 0, reflect: 0, size: 320, speed: 0.35, tilt: 0, cycle: 0, shapes: null, audioAmount: 1,

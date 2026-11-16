@@ -1,7 +1,7 @@
 {
   "name": "@shazmoghaddam/orbs",
-  "version": "1.7.0",
-  "description": "Twenty morphing dot animations for the web, with a lines style, glow, sound, named states and a desk display. One file, no dependencies.",
+  "version": "1.8.0",
+  "description": "Twenty-one morphing dot animations for the web, with a lines style, glow, sound, named states and a desk display. One file, no dependencies.",
   "main": "orb.js",
   "types": "orb.d.ts",
   "exports": {

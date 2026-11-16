@@ -7,7 +7,7 @@
 | Orbs (`@shazmoghaddam/orbs` on npm, and jsDelivr) | 1.x, latest release | Yes |
 | Older 1.x releases | | Fixes go into the next release only |
 
-Fixes go into the latest release. Script tags pinned to an exact version, such as `@1.7.0`, keep loading that version, so move the pin to pick up a fix.
+Fixes go into the latest release. Script tags pinned to an exact version, such as `@1.8.0`, keep loading that version, so move the pin to pick up a fix.
 
 ## Reporting a vulnerability
 
