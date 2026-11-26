@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+Site only. `orb.js` and the npm package are unchanged.
+
+- **Desk displays stay awake.** The display page and desk mode now ask again for the screen to stay on if the browser or the computer lets go (after sleep, on low battery), checking every 20 seconds. Before, they only asked when the page opened or the tab came back, so the screensaver could take over on a long run. Desk mode also asks again after you switch tabs and come back, and still lets go when you close it.
+
 ## 1.8.0 (2026-11-16)
 
 - New shape, twenty-one in all: `layers`, four tall, slanted diamonds packed tightly so they overlap like stacked sheets. It faces you and rocks gently rather than spinning, so it always reads as drawn. A slow wave lights each layer in turn, and with sound each layer swells to its own part of the music, low notes first. Works in dots and lines, and joins the default cycle.

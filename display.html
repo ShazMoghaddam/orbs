@@ -55,14 +55,21 @@
     var mic = q.get('sound') === 'mic', listening = false;
     if (mic) hint.textContent = 'Tap for full screen and to start the microphone';
 
-    // Keep the screen awake where the browser allows it.
-    var lock = null;
+    // Keep the screen awake where the browser allows it. The browser lets go
+    // when the tab is hidden, and the system can drop the lock on its own
+    // (after sleep, on low battery), so ask again on return and every 20 seconds.
+    var lock = null, asking = false;
     var keepAwake = function () {
-      if (document.visibilityState !== 'visible' || !navigator.wakeLock) return;
-      navigator.wakeLock.request('screen').then(function (l) { lock = l; }, function () {});
+      if (lock || asking || !navigator.wakeLock || document.visibilityState !== 'visible') return;
+      asking = true;
+      navigator.wakeLock.request('screen').then(function (l) {
+        lock = l; asking = false;
+        l.addEventListener('release', function () { lock = null; });
+      }, function () { lock = null; asking = false; });
     };
     keepAwake();
     document.addEventListener('visibilitychange', keepAwake);
+    setInterval(keepAwake, 20000);
 
     // Hide the cursor and the hint when idle.
     var idle = 0;
