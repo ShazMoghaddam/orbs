@@ -597,7 +597,21 @@
   });
 
   /* ── Desk mode: the Studio orb, full screen ── */
-  var desk = { orb: null, lock: null, idle: 0, shift: 0 };
+  var desk = { orb: null, lock: null, asking: false, idle: 0, shift: 0, awake: 0 };
+  // Keep the screen awake while desk mode is open. The browser lets go when the tab
+  // is hidden, and the system can drop the lock on its own (after sleep, on low
+  // battery), so ask again on return and every 20 seconds.
+  function deskKeepAwake() {
+    if (desk.lock || desk.asking || !navigator.wakeLock) return;
+    if ($('[data-desk-overlay]').hidden || document.visibilityState !== 'visible') return;
+    desk.asking = true;
+    navigator.wakeLock.request('screen').then(function (l) {
+      desk.lock = l; desk.asking = false;
+      l.addEventListener('release', function () { desk.lock = null; });
+      if ($('[data-desk-overlay]').hidden) l.release().catch(function () {});   // closed while asking
+    }, function () { desk.lock = null; desk.asking = false; });
+  }
+  document.addEventListener('visibilitychange', deskKeepAwake);
   function deskOpen() {
     var overlay = $('[data-desk-overlay]'), c = $('[data-desk-orb]');
     overlay.hidden = false;
@@ -607,7 +621,8 @@
     if (orb.audio) desk.orb.listen(orb.audio.stream || orb.audio.node);     // keep reacting to whatever is playing
     $('[data-desk-exit]').focus();
     if (overlay.requestFullscreen) overlay.requestFullscreen().catch(function () {});
-    if (navigator.wakeLock) navigator.wakeLock.request('screen').then(function (l) { desk.lock = l; }, function () {});
+    deskKeepAwake();
+    desk.awake = setInterval(deskKeepAwake, 20000);
     var wake = function () {
       overlay.removeAttribute('data-idle');
       clearTimeout(desk.idle);
@@ -624,7 +639,7 @@
     overlay.hidden = true;
     document.body.style.overflow = '';
     if (desk.orb) { desk.orb.destroy(); desk.orb = null; }
-    clearInterval(desk.shift); clearTimeout(desk.idle);
+    clearInterval(desk.shift); clearInterval(desk.awake); clearTimeout(desk.idle);
     if (desk.lock) { desk.lock.release().catch(function () {}); desk.lock = null; }
     // Leaving full screen resets focus, so hand it back to the button once that has finished.
     var refocus = function () { $('[data-desk]').focus({ preventScroll: true }); };
